@@ -1,0 +1,45 @@
+# Configuration for Autopilot Mode (Curiosity-Driven Exploit Hunting)
+mode: "qa"
+
+env:
+  map_size: [100.0, 100.0]
+  start_pos_agent: [10.0, 10.0]
+  start_pos_player: [80.0, 80.0]
+  goal_pos: [90.0, 90.0]
+  max_steps_per_episode: 300
+  obstacles:
+    - {type: "rect", x: 30.0, y: 0.0, w: 10.0, h: 60.0}
+    - {type: "rect", x: 60.0, y: 40.0, w: 10.0, h: 60.0}
+  bug_zones:
+    - {name: "wall_clipping_glitch", x: 25.0, y: 10.0, w: 5.0, h: 5.0, error_code: "ERR_CLIP_302"}
+    - {name: "softlock_zone", x: 50.0, y: 5.0, w: 8.0, h: 8.0, error_code: "ERR_SOFTLOCK_010"}
+
+rewards:
+  qa:
+    # We turn down standard extrinsic weights to show that curiosity *alone* (or with tiny step penalties)
+    # can guide the agent to discover coordinates and hidden zones.
+    exploration_weight: 0.0      # Set to 0 to rely purely on ICM for exploration!
+    bug_found_reward: 0.0        # Set to 0 to prove curiosity discovers the bugs without explicit reward!
+    movement_delta_reward: 0.0
+    out_of_bounds_penalty: -1.0
+    collision_penalty: -0.1
+    step_penalty: -0.05
+  npc: {}
+
+rl:
+  algorithm: "PPO"
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  ent_coef: 0.05                 # High entropy to encourage actions
+  total_timesteps: 30000
+
+# Intrinsic Curiosity Module (ICM) Hyperparameters
+icm:
+  enabled: true
+  eta: 25.0                       # Scaling factor for curiosity rewards (intrinsic reward weight)
+  beta: 0.2                      # Balance between forward and inverse models (loss weight)
+  learning_rate: 0.001           # Learning rate for ICM neural networks
+  feature_dim: 16                # Compressed representation space dimension

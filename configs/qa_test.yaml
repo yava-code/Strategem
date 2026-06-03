@@ -1,0 +1,37 @@
+# Configuration for Automated QA / Exploit Hunting Mode
+mode: "qa"
+
+env:
+  map_size: [100.0, 100.0]
+  start_pos_agent: [10.0, 10.0]
+  start_pos_player: [80.0, 80.0]
+  goal_pos: [90.0, 90.0]
+  max_steps_per_episode: 300
+  obstacles:
+    - {type: "rect", x: 30.0, y: 0.0, w: 10.0, h: 60.0} # A wall obstacle
+    - {type: "rect", x: 60.0, y: 40.0, w: 10.0, h: 60.0} # Another wall obstacle
+  bug_zones:
+    # A hidden bug zone representing a collision vulnerability or "out of bounds" glitch
+    # Located in a hard-to-reach corner behind the first obstacle wall
+    - {name: "wall_clipping_glitch", x: 25.0, y: 10.0, w: 5.0, h: 5.0, error_code: "ERR_CLIP_302"}
+    - {name: "softlock_zone", x: 50.0, y: 5.0, w: 8.0, h: 8.0, error_code: "ERR_SOFTLOCK_010"}
+
+rewards:
+  qa:
+    exploration_weight: 5.0      # Multiplier for visiting novel grid locations
+    bug_found_reward: 100.0      # Flat reward when entering a bug zone
+    movement_delta_reward: 0.5   # Reward for covering distance quickly
+    out_of_bounds_penalty: -10.0 # Penalty for hitting screen boundaries
+    collision_penalty: -1.0      # Flat penalty for hitting regular obstacles
+    step_penalty: -0.1           # Discourage wasting time without discovery
+  npc: {} # Not used in QA mode
+
+rl:
+  algorithm: "PPO"
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  ent_coef: 0.05                 # High entropy coefficient to encourage exploration
+  total_timesteps: 40000

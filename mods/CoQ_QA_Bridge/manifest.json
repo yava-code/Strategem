@@ -1,0 +1,10 @@
+{
+    "id": "BridgeMaker.QABridge",
+    "title": "Bridge-Maker QA Bridge",
+    "description": "Streams player state over a localhost socket and applies RL-chosen actions each turn, so The Bridge-Maker QA swarm can test the game. Length-prefixed JSON protocol, matches tools/mock_coq_server.py.",
+    "author": "Varfolomiy",
+    "version": "1.0.0",
+    "tags": "Utility",
+    "supportsCheckpoints": true,
+    "enabled": true
+}

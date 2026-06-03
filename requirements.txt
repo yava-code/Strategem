@@ -1,0 +1,32 @@
+gymnasium>=0.29.0
+stable-baselines3[extra]>=2.1.0
+numpy<2.0.0
+matplotlib>=3.7.0
+pyyaml>=6.0
+tensorboard>=2.12.0
+pydantic>=2.0.0
+
+# --- Optional: Phase 1 discovery (auto_analyzer) ---
+# frida>=16.0.0          # native hook injection (Unity IL2CPP / Unreal)
+# pymem>=1.13.0          # Windows RAM signature scanning
+# scapy>=2.5.0           # passive WebSocket frame sniffing
+
+# --- Optional: Phase 2 schema-guided codegen (agent_generator) ---
+# instructor>=1.0.0      # structured LLM output enforcement
+# google-generativeai    # Gemini backend for Instructor
+# openai>=1.0.0          # OpenAI backend for Instructor
+
+# --- Optional: Phase 3 distributed training (train_rllib) ---
+# ray[rllib]>=2.9.0      # rollout workers + built-in Curiosity ICM
+
+# --- Optional: Phase 5 engine bridges (engine_bridges) ---
+# grpcio>=1.60.0         # Unreal Learning Agents transport
+# mlagents-envs>=1.0.0   # Unity ML-Agents adaptor
+# godot-rl>=0.7.0        # Godot RL adaptor
+
+# --- Optional: live connectors (orchestrator ladder) ---
+# pythonnet>=3.0.0       # dotnet-mono connector: reflect Assembly-CSharp.dll (CoQ)
+# pymem>=1.13.0          # native (ghidra) connector: runtime pointer reads
+# dxcam>=0.0.5           # vision connector: fast Windows screen capture
+# mss>=9.0.0             # vision connector: cross-platform screen capture
+# pydirectinput>=1.0.4   # vision connector: OS-level action injection

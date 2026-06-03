@@ -1,0 +1,64 @@
+# QA Swarm profile for Caves of Qud (Unity/Mono, via the QA Bridge mod or mock).
+mode: "qa"
+
+env:
+  map_size: [80.0, 25.0]          # CoQ zone grid
+  start_pos_agent: [40.0, 12.0]
+  start_pos_player: [40.0, 12.0]
+  goal_pos: [79.0, 24.0]
+  max_steps_per_episode: 120     # shorter episodes = more re-exploration from spawn
+  persist_exploration: true       # keep novelty map across episodes -> broad coverage
+  obstacles: []                   # geometry lives in the game; QA cares about coverage + faults
+  bug_zones: []
+
+rewards:
+  qa:
+    exploration_weight: 5.0       # cover novel cells (curiosity proxy)
+    bug_found_reward: 120.0       # reward landing in an anomalous state
+    movement_delta_reward: 0.3
+    out_of_bounds_penalty: -1.0
+    collision_penalty: -0.3
+    step_penalty: -0.05
+  npc: {}
+
+rl:
+  algorithm: "PPO"
+  learning_rate: 0.0003
+  n_steps: 512
+  batch_size: 64
+  n_epochs: 5
+  gamma: 0.99
+  ent_coef: 0.05
+  total_timesteps: 8000
+
+# Curiosity drives exploration where extrinsic signal is sparse — the core of
+# "purposeful tester without knowing the game's API".
+icm:
+  enabled: true
+  eta: 20.0
+  beta: 0.2
+  learning_rate: 0.001
+  feature_dim: 16
+
+connector:
+  game_path: "D:/steam/steamapps/common/Caves of Qud"
+  ghidra_url: "http://127.0.0.1:8080"
+  transport:
+    host: "127.0.0.1"
+    port: 50545
+
+# The swarm: each tester optimizes a different failure mode.
+swarm:
+  agents:
+    - name: "exploit_hunter"
+      overrides:
+        rewards.qa.exploration_weight: 8.0
+        rewards.qa.bug_found_reward: 180.0
+    - name: "speedrunner"
+      overrides:
+        rewards.qa.movement_delta_reward: 1.5
+        rewards.qa.step_penalty: -0.25
+        rewards.qa.exploration_weight: 1.0
+    - name: "chaos_monkey"
+      policy: "random"          # pure fuzzer: uniform random actions, broad coverage
+      overrides: {}

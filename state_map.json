@@ -1,0 +1,100 @@
+{
+    "game_name": "test_game_binary",
+    "observation_dimensions": 6,
+    "state_variables": {
+        "net_x": {
+            "type": "float",
+            "min": 0.0,
+            "max": 100.0,
+            "role": "coordinate",
+            "importance": 1.0,
+            "normalize": {
+                "method": "min_max",
+                "low": 0.0,
+                "high": 100.0
+            },
+            "json_path": "state.x",
+            "source": "network"
+        },
+        "net_y": {
+            "type": "float",
+            "min": 0.0,
+            "max": 100.0,
+            "role": "coordinate",
+            "importance": 1.0,
+            "normalize": {
+                "method": "min_max",
+                "low": 0.0,
+                "high": 100.0
+            },
+            "json_path": "state.y",
+            "source": "network"
+        },
+        "net_player_x": {
+            "type": "float",
+            "min": 0.0,
+            "max": 100.0,
+            "role": "coordinate",
+            "importance": 0.8,
+            "normalize": {
+                "method": "min_max",
+                "low": 0.0,
+                "high": 100.0
+            },
+            "json_path": "state.player_x",
+            "source": "network"
+        },
+        "net_player_y": {
+            "type": "float",
+            "min": 0.0,
+            "max": 100.0,
+            "role": "coordinate",
+            "importance": 0.8,
+            "normalize": {
+                "method": "min_max",
+                "low": 0.0,
+                "high": 100.0
+            },
+            "json_path": "state.player_y",
+            "source": "network"
+        },
+        "net_health": {
+            "type": "float",
+            "min": 0.0,
+            "max": 100.0,
+            "role": "health",
+            "importance": 1.0,
+            "normalize": {
+                "method": "min_max",
+                "low": 0.0,
+                "high": 100.0
+            },
+            "json_path": "state.health",
+            "source": "network"
+        },
+        "net_tick": {
+            "type": "float",
+            "min": 0.0,
+            "max": 500.0,
+            "role": "time",
+            "importance": 0.5,
+            "normalize": {
+                "method": "min_max",
+                "low": 0.0,
+                "high": 500.0
+            },
+            "json_path": "state.tick",
+            "source": "network"
+        }
+    },
+    "actions": {
+        "discrete_actions_count": 5,
+        "bindings": [
+            "MOVE_UP",
+            "MOVE_DOWN",
+            "MOVE_LEFT",
+            "MOVE_RIGHT",
+            "IDLE"
+        ]
+    }
+}

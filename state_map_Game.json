@@ -1,0 +1,39 @@
+{
+  "game_name": "Game",
+  "engine_hint": "unknown",
+  "binary": "C:/Games/MyGame/GameAssembly.dll",
+  "module_name": "GameAssembly.dll",
+  "observation_dimensions": 1,
+  "state_variables": {
+    "hp": {
+      "type": "float",
+      "min": 0.0,
+      "max": 100.0,
+      "role": "health",
+      "pointer_chain": {
+        "base": "GameAssembly.dll+0x1A3F80",
+        "offsets": [
+          16,
+          72,
+          44
+        ],
+        "verified": true
+      },
+      "struct_offset": null,
+      "dynamic_only": false,
+      "source": "discovery"
+    }
+  },
+  "actions": {
+    "count": 6,
+    "bindings": [
+      "MOVE_N",
+      "MOVE_S",
+      "MOVE_E",
+      "MOVE_W",
+      "ATTACK",
+      "WAIT"
+    ],
+    "detailed": null
+  }
+}

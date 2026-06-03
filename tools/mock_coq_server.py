@@ -19,9 +19,10 @@ GRID_W, GRID_H = 80, 25
 ROOM_W, ROOM_H = 28, 16       # walls beyond this; spawn is the room center
 SPAWN = (ROOM_W // 2, ROOM_H // 2)
 
-# Action layout matches DotNetConnector.ACTION_BINDINGS.
-# 0 MOVE_N, 1 MOVE_S, 2 MOVE_E, 3 MOVE_W, 4 WAIT, 5 INTERACT
-DELTAS = {0: (0, -1), 1: (0, 1), 2: (1, 0), 3: (-1, 0), 4: (0, 0), 5: (0, 0)}
+# Action layout matches DotNetConnector.ACTION_BINDINGS (8 dirs + wait).
+# 0 N, 1 S, 2 E, 3 W, 4 NE, 5 NW, 6 SE, 7 SW, 8 WAIT
+DELTAS = {0: (0, -1), 1: (0, 1), 2: (1, 0), 3: (-1, 0),
+          4: (1, -1), 5: (-1, -1), 6: (1, 1), 7: (-1, 1), 8: (0, 0)}
 
 # Injected fault zones (the bugs a tester should find), spread in different
 # directions. Lava/softlock are wide mid-distance bands (reliably swept); crash

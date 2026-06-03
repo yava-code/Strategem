@@ -1,0 +1,26 @@
+# Bridge-Maker Session Config
+# One file per game target. Controls the discovery pipeline.
+# Run: python -m src.orchestrator_v2 --session configs/session.yaml [--dry-run]
+
+session_id: my_game_session
+
+# ── Target game ──────────────────────────────────────────────────────────────
+game_exe: "Game.exe"                          # process name (as seen in Task Manager)
+game_window_title: "My Game"                  # window title for screenshot capture
+module_name: "GameAssembly.dll"               # primary module for pointer chain base
+# engine_hint: "unity-il2cpp"                 # optional; helps Ghidra analysis hints
+
+# ── Binary for static analysis ───────────────────────────────────────────────
+ghidra_binary_path: "C:/Games/MyGame/GameAssembly.dll"
+
+# ── Memory scan settings ─────────────────────────────────────────────────────
+scan_type: "float"           # float | dword | string
+
+# ── MCP server paths ─────────────────────────────────────────────────────────
+mcp:
+  ce_server_path: "D:/CE/cheatengine-mcp-bridge/MCP_Server/mcp_cheatengine.py"
+  ghidra_server_path: "D:/hgidra/ghidra-mcp/bridge_mcp_ghidra.py"
+  python_exe: "python"       # python exe to spawn MCP server subprocesses
+
+# ── Output ───────────────────────────────────────────────────────────────────
+# state_map.json will be written to: state_map_{game_name}.json in the project root

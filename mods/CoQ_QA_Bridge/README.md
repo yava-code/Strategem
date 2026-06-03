@@ -23,13 +23,23 @@ The Python side is identical to the mock run — same schema, same protocol.
 ## How it works
 - A background `TcpListener` accepts the protocol; each request is queued.
 - A Harmony postfix on `XRLCore.PlayerTurn` drains the queue **on the main thread**
-  (the only safe place to read/mutate game state), applies the action, and replies
-  with the resulting state frame.
-- State is read by field name off `XRL.The.Player` (`GetStat`, `CurrentCell`,
-  `Stomach`), so it tolerates content/version drift.
+  (the only safe place to read/mutate game state), applies the action (8-direction
+  `GameObject.Move` + wait), and replies with the resulting state frame.
+- State is read by field name off `XRL.The.Player` / `The.PlayerCell`
+  (`GetStat("Hitpoints").Value`, `Cell.X/Y`, `GetPart<Stomach>().HungerLevel`,
+  `Zone.GetObjectsWithPart("Brain")`), so it tolerates content/version drift.
 
-## Version note
-Action verbs use `GameObject.Move(direction)`. If a CoQ update renames movement,
-edit `ApplyAction()` in `QABridge.cs`; the state-read path is unaffected. If
-`XRLCore.PlayerTurn` is renamed, repoint the `[HarmonyPatch]` target — any
-once-per-player-turn main-thread method works.
+## The oracles (what actually makes it "testing")
+Exploration only *finds* states; these decide if a state is a **bug**:
+- **EXCEPTION** — a Harmony `Finalizer` on `PlayerTurn` captures any exception
+  thrown during the turn (real crashes — the #1 automated-playtest signal), logs
+  it, and rethrows so the game behaves exactly as unmodified.
+- **INVARIANT** — flags `HP<0`, missing cell, out-of-zone position.
+- **SOFTLOCK** — no positional change across many turns.
+
+## Build status
+`QABridge.cs` is **compiled-validated against the real game assemblies**
+(`Assembly-CSharp.dll`, `0Harmony.dll`, `UnityEngine.CoreModule.dll`) — 0 errors —
+so the API calls are correct. CoQ recompiles it at load. If `XRLCore.PlayerTurn`
+is ever renamed, repoint the `[HarmonyPatch]`; any once-per-player-turn main-thread
+method works.

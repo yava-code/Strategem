@@ -6,6 +6,16 @@ pyyaml>=6.0
 tensorboard>=2.12.0
 pydantic>=2.0.0
 
+# ── Phase 1: Swarm orchestration ─────────────────────────────────────────────
+langgraph>=0.2.0            # LangGraph StateGraph orchestrator
+groq>=0.9.0                 # Groq API client (Scouts + General LLM)
+mcp>=1.5.0,<2.0.0           # MCP Python SDK (CE + Ghidra client sessions)
+
+# ── Phase 1: Vision Scout ─────────────────────────────────────────────────────
+dxcam>=0.0.5                # Fast Windows screen capture (<1 ms latency)
+Pillow>=10.0.0              # PIL fallback + image encoding
+pywin32>=306                # Window handle resolution (FindWindow)
+
 # --- Optional: Phase 1 discovery (auto_analyzer) ---
 # frida>=16.0.0          # native hook injection (Unity IL2CPP / Unreal)
 # pymem>=1.13.0          # Windows RAM signature scanning

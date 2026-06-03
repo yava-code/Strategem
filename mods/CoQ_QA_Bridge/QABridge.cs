@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -14,18 +14,21 @@ using XRL.World.Parts;
 // =====================================================================
 // Bridge-Maker QA Bridge — Caves of Qud Harmony mod.
 //
-// A background TCP listener accepts the length-prefixed JSON protocol used by
+// A background TCP listener speaks the length-prefixed JSON protocol used by
 // SocketTransport / mock_coq_server. Requests are queued and drained on the main
-// thread by a Harmony postfix on the player turn, where it is safe to read/mutate
-// game state. State is read by FIELD NAME from XRL.The.Player (version-resilient).
+// thread by a Harmony postfix on XRLCore.PlayerTurn, where it is safe to read and
+// mutate game state. API verified by reflection against Assembly-CSharp.dll.
+//
+// QA value lives in the ORACLES, not the walking:
+//   * EXCEPTION  — a Harmony finalizer captures any exception thrown during the
+//                  player turn (the #1 automated-playtest signal: real crashes).
+//   * INVARIANT  — HP<0, missing cell, out-of-zone position are flagged.
+//   * SOFTLOCK   — no positional change for many turns.
 //
 // Protocol (identical to the mock):
 //   in : {"cmd":"reset"} | {"cmd":"step","action":<int>} | {"cmd":"bye"}
 //   out: {"obs":{...}, "reward_hint":0.0, "terminated":bool, "truncated":false,
 //         "anomaly":str|null, "info":{}}
-//
-// NOTE: action verbs use GameObject.Move(direction). If a future CoQ build renames
-// movement, adjust ApplyAction() — the state-read path is independent of it.
 // =====================================================================
 
 namespace BridgeMaker
@@ -33,8 +36,11 @@ namespace BridgeMaker
     public static class QABridgeServer
     {
         const int PORT = 50545;
+        const int ZONE_W = 80, ZONE_H = 25;
 
-        // One pending request at a time keeps the RL<->turn handshake in lockstep.
+        // 8-directional movement + wait, matching DotNetConnector.ACTION_BINDINGS.
+        static readonly string[] DIRS = { "N", "S", "E", "W", "NE", "NW", "SE", "SW" };
+
         class Pending
         {
             public string Cmd;
@@ -45,11 +51,10 @@ namespace BridgeMaker
 
         static readonly ConcurrentQueue<Pending> Inbox = new ConcurrentQueue<Pending>();
         static TcpListener Listener;
-        static Thread AcceptThread;
         static volatile bool Running;
 
-        // Stuck-detection for SOFTLOCK heuristic.
-        static int LastX = int.MinValue, LastY = int.MinValue, StillTurns;
+        static int LastX = int.MinValue, LastY = int.MinValue, StillTurns, StepCount;
+        static volatile string PendingException;  // set by the crash finalizer
 
         public static void EnsureStarted()
         {
@@ -57,9 +62,14 @@ namespace BridgeMaker
             Running = true;
             Listener = new TcpListener(IPAddress.Loopback, PORT);
             Listener.Start();
-            AcceptThread = new Thread(AcceptLoop) { IsBackground = true, Name = "QABridgeAccept" };
-            AcceptThread.Start();
+            new Thread(AcceptLoop) { IsBackground = true, Name = "QABridgeAccept" }.Start();
             UnityEngine.Debug.Log($"[QABridge] Listening on 127.0.0.1:{PORT}");
+        }
+
+        public static void RecordException(Exception e)
+        {
+            PendingException = "EXCEPTION:" + e.GetType().Name;
+            UnityEngine.Debug.LogWarning("[QABridge] captured turn exception: " + e);
         }
 
         static void AcceptLoop()
@@ -70,8 +80,7 @@ namespace BridgeMaker
                 {
                     var client = Listener.AcceptTcpClient();
                     client.NoDelay = true;
-                    var t = new Thread(() => ClientLoop(client)) { IsBackground = true };
-                    t.Start();
+                    new Thread(() => ClientLoop(client)) { IsBackground = true }.Start();
                 }
                 catch (SocketException) { return; }
                 catch (Exception e) { UnityEngine.Debug.LogWarning($"[QABridge] accept: {e.Message}"); }
@@ -90,12 +99,10 @@ namespace BridgeMaker
                     string cmd = ExtractString(body, "cmd");
                     if (cmd == "bye") return;
 
-                    var pending = new Pending { Cmd = cmd, Action = ExtractInt(body, "action", 4) };
+                    var pending = new Pending { Cmd = cmd, Action = ExtractInt(body, "action", 8) };
                     Inbox.Enqueue(pending);
-                    // Block until the main-thread hook fills the response.
                     pending.Done.Wait(15000);
-                    var outBytes = Encoding.UTF8.GetBytes(pending.Response ?? "{}");
-                    WriteFrame(ns, outBytes);
+                    WriteFrame(ns, Encoding.UTF8.GetBytes(pending.Response ?? "{}"));
                 }
             }
         }
@@ -108,12 +115,14 @@ namespace BridgeMaker
                 try
                 {
                     if (p.Cmd == "step") ApplyAction(p.Action);
+                    StepCount++;
                     p.Response = BuildStateJson();
                 }
                 catch (Exception e)
                 {
-                    p.Response = "{\"obs\":{},\"terminated\":true,\"truncated\":false,\"anomaly\":\"BRIDGE_ERROR\",\"info\":{}}";
-                    UnityEngine.Debug.LogWarning($"[QABridge] pump: {e.Message}");
+                    RecordException(e);
+                    p.Response = "{\"obs\":{},\"reward_hint\":0.0,\"terminated\":true,"
+                               + "\"truncated\":false,\"anomaly\":\"EXCEPTION:" + e.GetType().Name + "\",\"info\":{}}";
                 }
                 finally { p.Done.Set(); }
             }
@@ -123,95 +132,70 @@ namespace BridgeMaker
         {
             var player = The.Player;
             if (player == null) return;
-            switch (action)
-            {
-                case 0: player.Move("N"); break;
-                case 1: player.Move("S"); break;
-                case 2: player.Move("E"); break;
-                case 3: player.Move("W"); break;
-                case 4: break;                       // WAIT
-                case 5: player.Move("N", Forced: false); break; // INTERACT ~ bump
-            }
+            if (action >= 0 && action < DIRS.Length)
+                player.Move(DIRS[action]);   // optional params default; bumps = attack/dig
+            // action == DIRS.Length -> WAIT (let the turn pass)
         }
 
         static string BuildStateJson()
         {
             var player = The.Player;
-            var cell = player?.CurrentCell;
-            float hp = ReadStat(player, "Hitpoints", out float hpMax);
-            int x = cell?.X ?? 0, y = cell?.Y ?? 0;
-            float hunger = ReadHunger(player);
-            float level = ReadStat(player, "Level", out _);
-            float turn = SafeTurns();
-            int threats = CountHostiles(cell);
-            string anomaly = DetectAnomaly(x, y, hp);
-            bool terminated = hp <= 0f;
+            var cell = The.PlayerCell;
+
+            float hp = 0f, hpMax = 0f, level = 1f, hunger = 0f;
+            int x = cell?.X ?? -1, y = cell?.Y ?? -1, threats = 0;
+
+            var hpStat = player?.GetStat("Hitpoints");
+            if (hpStat != null) { hp = hpStat.Value; hpMax = hpStat.BaseValue; }
+            var lvlStat = player?.GetStat("Level");
+            if (lvlStat != null) level = lvlStat.Value;
+            var stomach = player?.GetPart<Stomach>();
+            if (stomach != null) hunger = stomach.HungerLevel;
+            if (cell?.ParentZone != null)
+            {
+                foreach (var go in cell.ParentZone.GetObjectsWithPart("Brain"))
+                    if (go.IsHostileTowards(player)) threats++;
+                if (threats > 10) threats = 10;
+            }
+
+            string anomaly = DetectAnomaly(x, y, hp, cell);
+            bool terminated = hp <= 0f || (anomaly != null && anomaly.StartsWith("EXCEPTION"));
 
             var sb = new StringBuilder(256);
             sb.Append("{\"obs\":{");
-            sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture,
+            sb.AppendFormat(CultureInfo.InvariantCulture,
                 "\"coq_hp\":{0},\"coq_hp_max\":{1},\"coq_x\":{2},\"coq_y\":{3},\"coq_depth\":{4}," +
                 "\"coq_hunger\":{5},\"coq_level\":{6},\"coq_turn\":{7},\"coq_threats\":{8}",
-                hp, hpMax, x, y, 0f, hunger, level, turn, threats);
+                hp, hpMax, Math.Max(x, 0), Math.Max(y, 0), 0f, hunger, level, StepCount, threats);
             sb.Append("},\"reward_hint\":0.0,");
-            sb.AppendFormat("\"terminated\":{0},\"truncated\":false,",
-                terminated ? "true" : "false");
-            sb.Append(anomaly == null ? "\"anomaly\":null," : $"\"anomaly\":\"{anomaly}\",");
+            sb.AppendFormat("\"terminated\":{0},\"truncated\":false,", terminated ? "true" : "false");
+            sb.Append(anomaly == null ? "\"anomaly\":null," : "\"anomaly\":\"" + anomaly + "\",");
             sb.Append("\"info\":{}}");
             return sb.ToString();
         }
 
-        static string DetectAnomaly(int x, int y, float hp)
+        // --- Oracles ---------------------------------------------------------
+        static string DetectAnomaly(int x, int y, float hp, Cell cell)
         {
+            // 1) Crash captured by the finalizer takes priority.
+            if (PendingException != null)
+            {
+                var e = PendingException;
+                PendingException = null;
+                return e;
+            }
+            // 2) Invariants that should never hold in a correct game.
+            if (cell == null) return "INVARIANT_NO_CELL";
+            if (hp < 0f) return "INVARIANT_HP_NEGATIVE";
+            if (x < 0 || x >= ZONE_W || y < 0 || y >= ZONE_H) return "INVARIANT_POS_OOB";
+            // 3) Softlock: no positional change across many turns.
             if (x == LastX && y == LastY) StillTurns++;
             else { StillTurns = 0; LastX = x; LastY = y; }
-            if (StillTurns >= 12) return "SOFTLOCK_SUSPECTED"; // no positional change for many turns
+            if (StillTurns >= 25) return "SOFTLOCK_SUSPECTED";
             return null;
         }
 
-        static float ReadStat(GameObject who, string stat, out float max)
-        {
-            max = 0f;
-            try
-            {
-                var s = who?.GetStat(stat);
-                if (s == null) return 0f;
-                max = s.BaseValue;
-                return s.Value;
-            }
-            catch { return 0f; }
-        }
-
-        static float ReadHunger(GameObject who)
-        {
-            try
-            {
-                var stomach = who?.GetPart<Stomach>();
-                return stomach != null ? (float)stomach.HungerLevel : 0f;
-            }
-            catch { return 0f; }
-        }
-
-        static float SafeTurns()
-        {
-            try { return The.Game != null ? (float)The.Game.Turns : 0f; }
-            catch { return 0f; }
-        }
-
-        static int CountHostiles(Cell cell)
-        {
-            try
-            {
-                if (cell?.ParentZone == null) return 0;
-                int n = 0;
-                foreach (var go in cell.ParentZone.GetObjectsWithPart("Brain"))
-                    if (go.IsHostileTowards(The.Player)) n++;
-                return Math.Min(n, 10);
-            }
-            catch { return 0; }
-        }
-
-        // --- length-prefixed (4-byte BE) framing ---
+        // --- length-prefixed (4-byte BE) framing -----------------------------
         static byte[] ReadFrame(NetworkStream ns)
         {
             var header = ReadExact(ns, 4);
@@ -247,7 +231,7 @@ namespace BridgeMaker
             ns.Flush();
         }
 
-        // Tiny field extractors (avoid pulling a JSON dep into the mod).
+        // Tiny field extractors (no JSON dep inside the mod).
         static string ExtractString(byte[] body, string key)
         {
             string s = Encoding.UTF8.GetString(body);
@@ -277,6 +261,14 @@ namespace BridgeMaker
         {
             QABridgeServer.EnsureStarted();
             QABridgeServer.Pump();
+        }
+
+        // Crash oracle: capture any exception thrown during the turn, then let it
+        // propagate so the game still behaves exactly as it would unmodified.
+        static Exception Finalizer(Exception __exception)
+        {
+            if (__exception != null) QABridgeServer.RecordException(__exception);
+            return __exception;
         }
     }
 }

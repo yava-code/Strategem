@@ -13,7 +13,9 @@ from src.connectors.socket_transport import SocketTransport
 # socket from the QA Bridge Harmony mod.
 # =====================================================================
 
-ACTION_BINDINGS = ["MOVE_N", "MOVE_S", "MOVE_E", "MOVE_W", "WAIT", "INTERACT"]
+# CoQ movement is 8-directional; the bridge maps these to GameObject.Move(dir).
+ACTION_BINDINGS = ["MOVE_N", "MOVE_S", "MOVE_E", "MOVE_W",
+                   "MOVE_NE", "MOVE_NW", "MOVE_SE", "MOVE_SW", "WAIT"]
 
 # CoQ overworld/zone grid is 80x25 cells; HP/level/turn ranges are nominal
 # normalization bounds, not hard limits (the bridge reports raw values).

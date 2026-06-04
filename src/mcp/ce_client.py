@@ -204,13 +204,72 @@ class CEClient:
         )
 
     async def module_base(self, module_name: str) -> Optional[int]:
-        """Return the runtime base address of a loaded module."""
-        data = await self._call("get_symbol_address", symbol=module_name)
-        addr_str: str = data.get("address", "")
-        if addr_str:
-            return int(addr_str, 16)
+        """
+        Return the runtime base address of a loaded module via enum_modules.
+        CE returns: {name, address, path, size, is_64bit}
+        """
+        modules = await self.list_modules()
+        lower = module_name.lower()
+        for mod in modules:
+            name = mod.get("name", mod.get("moduleName", "")).lower()
+            if name == lower or name.endswith(f"\\{lower}") or name.endswith(f"/{lower}"):
+                # CE uses "address" key for module base
+                raw = mod.get("address", mod.get("baseAddress", mod.get("base", "0x0")))
+                return int(raw, 16) if isinstance(raw, str) else int(raw)
         return None
+
+    async def read_memory(self, address: str, size: int = 256) -> dict:
+        """Read raw bytes from a memory address. Returns {data, bytes, address, size}."""
+        return await self._call("read_memory", address=address, size=size)
 
     async def list_modules(self) -> list[dict]:
         data = await self._call("enum_modules")
         return data.get("modules", [])
+
+    # ------------------------------------------------------------------
+    # Persistent named scans — scan state lives in CE between connections
+    # ------------------------------------------------------------------
+
+    async def persistent_create(self, name: str) -> bool:
+        data = await self._call("create_persistent_scan", name=name)
+        return data.get("success", True)
+
+    async def persistent_first_scan(
+        self,
+        name: str,
+        value: str,
+        scan_type: str = "float",
+        scan_option: str = "exact",
+    ) -> int:
+        data = await self._call(
+            "persistent_scan_first_scan",
+            name=name,
+            value=value,
+            type=scan_type,
+            scan_option=scan_option,
+        )
+        return data.get("count", 0)
+
+    async def persistent_next_scan(
+        self,
+        name: str,
+        value: Optional[str] = None,
+        scan_option: str = "exact",
+    ) -> int:
+        kwargs: dict = {"name": name, "scan_option": scan_option}
+        if value is not None:
+            kwargs["value"] = value
+        data = await self._call("persistent_scan_next_scan", **kwargs)
+        return data.get("count", 0)
+
+    async def persistent_results(self, name: str, limit: int = 100) -> ScanPage:
+        data = await self._call("persistent_scan_get_results", name=name, limit=limit)
+        items = [
+            ScanResult(address=r.get("address", ""), value=r.get("value", ""))
+            for r in data.get("results", [])
+        ]
+        return ScanPage(total=data.get("total", len(items)), results=items)
+
+    async def persistent_destroy(self, name: str) -> bool:
+        data = await self._call("persistent_scan_destroy", name=name)
+        return data.get("destroyed", True)

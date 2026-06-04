@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -140,6 +141,13 @@ class GhidraClient:
     async def xrefs_to(self, address: str, limit: int = 100) -> list[XRef]:
         """All code that reads/writes the given static address or offset."""
         data = await self._call("get_xrefs_to", address=address, limit=limit)
+
+        # Ghidra MCP returns xrefs as plain text:
+        #   "From <addr>[ in <fn>] [<TYPE>]"
+        if "text" in data:
+            return _parse_xrefs_text(data["text"])
+
+        # Structured JSON fallback (future Ghidra MCP versions)
         refs = []
         for r in data.get("xrefs", data.get("references", [])):
             refs.append(XRef(
@@ -151,11 +159,10 @@ class GhidraClient:
 
     async def decompile(self, address: str) -> DecompiledFunction:
         data = await self._call("decompile_function", address=address)
-        return DecompiledFunction(
-            address=address,
-            name=data.get("name", data.get("function_name", "unknown")),
-            pseudocode=data.get("decompiled", data.get("code", data.get("text", ""))),
-        )
+        # Ghidra MCP returns decompile as plain text
+        code = data.get("text") or data.get("decompiled") or data.get("code", "")
+        name = data.get("name", data.get("function_name", "unknown"))
+        return DecompiledFunction(address=address, name=name, pseudocode=code)
 
     async def function_at(self, address: str) -> Optional[FunctionInfo]:
         data = await self._call("get_function_by_address", address=address)
@@ -231,3 +238,30 @@ class GhidraClient:
             FunctionInfo(address=f.get("address", ""), name=f.get("name", ""))
             for f in data.get("functions", data.get("results", []))
         ]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _parse_xrefs_text(text: str) -> list[XRef]:
+    """
+    Parses the Ghidra MCP plain-text xrefs format:
+      From <hex_addr>[ in <function_name>] [<REF_TYPE>]
+    """
+    refs: list[XRef] = []
+    # Match: "From 14000013c [DATA]" or "From 1400011ed in __scrt_common_main_seh [UNCONDITIONAL_CALL]"
+    pattern = re.compile(
+        r"From\s+([0-9a-fA-F]+)"        # address
+        r"(?:\s+in\s+(\S+))?"            # optional: in <fn_name>
+        r"\s+\[([^\]]+)\]"              # [REF_TYPE]
+    )
+    for line in text.strip().splitlines():
+        m = pattern.search(line.strip())
+        if m:
+            refs.append(XRef(
+                from_address=m.group(1),
+                function_name=m.group(2),
+                ref_type=m.group(3),
+            ))
+    return refs

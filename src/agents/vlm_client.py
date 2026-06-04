@@ -108,7 +108,7 @@ class Screenshotter:
         cap = self.capture()
         with open(path, "wb") as f:
             f.write(cap.png_bytes)
-        print(f"[VLM] Debug screenshot saved → {path}")
+        print(f"[VLM] Debug screenshot saved -> {path}")
 
 
 # ---------------------------------------------------------------------------

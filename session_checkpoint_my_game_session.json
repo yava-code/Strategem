@@ -1,0 +1,232 @@
+{
+  "session_id": "my_game_session",
+  "game_exe": "Game.exe",
+  "game_window_title": "My Game",
+  "module_name": "GameAssembly.dll",
+  "ghidra_binary_path": "C:/Games/MyGame/GameAssembly.dll",
+  "scan_type": "float",
+  "ce_server_path": "D:/CE/cheatengine-mcp-bridge/MCP_Server/mcp_cheatengine.py",
+  "ghidra_server_path": "D:/hgidra/ghidra-mcp/bridge_mcp_ghidra.py",
+  "python_exe": "python",
+  "dry_run": true,
+  "resume": true,
+  "module_base": 5368709120,
+  "observed_deltas": [
+    {
+      "field": "hp",
+      "old_value": 100.0,
+      "new_value": 85.0,
+      "confidence": 0.95
+    },
+    {
+      "field": "position_x",
+      "old_value": 10.0,
+      "new_value": 12.0,
+      "confidence": 0.88
+    }
+  ],
+  "scan_candidates": {
+    "hp": [
+      "0x7FF800A3F8C0",
+      "0x7FF800B12340"
+    ],
+    "position_x": [
+      "0x7FF800A3F8C0",
+      "0x7FF800B12340"
+    ]
+  },
+  "pointer_chains": {
+    "hp": {
+      "base": "GameAssembly.dll+0x1A3F80",
+      "offsets": [
+        16,
+        72,
+        44
+      ],
+      "verified": true,
+      "source": "dry_run"
+    },
+    "position_x": {
+      "base": "GameAssembly.dll+0x1A3F80",
+      "offsets": [
+        16,
+        72,
+        44
+      ],
+      "verified": true,
+      "source": "dry_run"
+    }
+  },
+  "raw_struct": {
+    "class_name": "PlayerCharacter",
+    "fields": [
+      {
+        "offset": 44,
+        "guessed_type": "float",
+        "value": 85.0
+      },
+      {
+        "offset": 48,
+        "guessed_type": "float",
+        "value": 100.0
+      },
+      {
+        "offset": 52,
+        "guessed_type": "float",
+        "value": 60.0
+      },
+      {
+        "offset": 80,
+        "guessed_type": "float",
+        "value": 10.0
+      },
+      {
+        "offset": 84,
+        "guessed_type": "float",
+        "value": 12.0
+      }
+    ]
+  },
+  "static_analysis": {
+    "hp": {
+      "field": "hp",
+      "static_offset": "0x2C",
+      "write_functions": [
+        "0x14023A400"
+      ],
+      "struct_fields": [
+        {
+          "name": "hp",
+          "offset": 44,
+          "type": "float",
+          "semantic_role": "health"
+        },
+        {
+          "name": "hp_max",
+          "offset": 48,
+          "type": "float",
+          "semantic_role": "scalar"
+        },
+        {
+          "name": "stamina",
+          "offset": 52,
+          "type": "float",
+          "semantic_role": "scalar"
+        },
+        {
+          "name": "pos_x",
+          "offset": 80,
+          "type": "float",
+          "semantic_role": "coordinate_x"
+        },
+        {
+          "name": "pos_y",
+          "offset": 84,
+          "type": "float",
+          "semantic_role": "coordinate_y"
+        }
+      ],
+      "class_name": "PlayerCharacter"
+    }
+  },
+  "action_manifest": {
+    "actions": [
+      {
+        "id": 0,
+        "name": "MOVE_N",
+        "key_binding": "w",
+        "entry_point_addr": "0x14020A100"
+      },
+      {
+        "id": 1,
+        "name": "MOVE_S",
+        "key_binding": "s",
+        "entry_point_addr": "0x14020A120"
+      },
+      {
+        "id": 2,
+        "name": "MOVE_E",
+        "key_binding": "d",
+        "entry_point_addr": "0x14020A140"
+      },
+      {
+        "id": 3,
+        "name": "MOVE_W",
+        "key_binding": "a",
+        "entry_point_addr": "0x14020A160"
+      },
+      {
+        "id": 4,
+        "name": "ATTACK",
+        "key_binding": "space",
+        "entry_point_addr": "0x14020A200"
+      },
+      {
+        "id": 5,
+        "name": "WAIT",
+        "key_binding": ".",
+        "entry_point_addr": null
+      }
+    ]
+  },
+  "state_map_path": "state_map_Game.json",
+  "state_map": {
+    "game_name": "Game",
+    "engine_hint": "unknown",
+    "binary": "C:/Games/MyGame/GameAssembly.dll",
+    "module_name": "GameAssembly.dll",
+    "observation_dimensions": 2,
+    "state_variables": {
+      "hp": {
+        "type": "float",
+        "min": 0.0,
+        "max": 100.0,
+        "role": "health",
+        "pointer_chain": {
+          "base": "GameAssembly.dll+0x1A3F80",
+          "offsets": [
+            16,
+            72,
+            44
+          ],
+          "verified": true
+        },
+        "struct_offset": null,
+        "dynamic_only": false,
+        "source": "discovery"
+      },
+      "position_x": {
+        "type": "float",
+        "min": 0.0,
+        "max": 100.0,
+        "role": "scalar",
+        "pointer_chain": {
+          "base": "GameAssembly.dll+0x1A3F80",
+          "offsets": [
+            16,
+            72,
+            44
+          ],
+          "verified": true
+        },
+        "struct_offset": null,
+        "dynamic_only": false,
+        "source": "discovery"
+      }
+    },
+    "actions": {
+      "count": 6,
+      "bindings": [
+        "MOVE_N",
+        "MOVE_S",
+        "MOVE_E",
+        "MOVE_W",
+        "ATTACK",
+        "WAIT"
+      ],
+      "detailed": null
+    }
+  },
+  "phase": "done",
+  "errors": []
+}

@@ -1,0 +1,33 @@
+# Bridge-Maker — Dummy target session config
+# Used for integration testing the full discovery pipeline.
+#
+# Target: tools/dummy_target.py (Python ctypes PlayerState struct)
+#   struct PlayerState { float health; float max_health; float pos_x; float pos_y; int turn; }
+#   Health auto-decrements 10 every 20 seconds. Struct lives on Python heap.
+#
+# Expected outcome:
+#   - CE scan finds health address (exact float scan)
+#   - Module base resolves python.exe base
+#   - Struct dissection reveals 5 fields at correct offsets
+#   - Pointer chain: dynamic_only=True (heap allocation, no static global pointer)
+#   - state_map_python.json written with health + pos fields
+
+session_id: dummy_test
+
+game_exe: "10456"
+game_window_title: ""           # no window — console only
+module_name: "python.exe"
+ghidra_binary_path: "/CoQ.exe"  # use CoQ.exe already in Ghidra project for static analysis test
+
+scan_type: "float"
+
+# seed_deltas: used when game_window_title is empty (no GUI / headless target).
+# VisionScout skips VLM and uses these directly as observed_deltas.
+seed_deltas:
+  - {field: "health",  old_value: 100.0, new_value: 100.0, confidence: 1.0}
+  - {field: "pos_x",   old_value: 5.0,   new_value: 5.0,   confidence: 0.9}
+
+mcp:
+  ce_server_path: "D:/CE/cheatengine-mcp-bridge/MCP_Server/mcp_cheatengine.py"
+  ghidra_server_path: "D:/hgidra/ghidra-mcp/bridge_mcp_ghidra.py"
+  python_exe: "python"

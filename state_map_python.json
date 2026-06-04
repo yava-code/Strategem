@@ -1,8 +1,8 @@
 {
-  "game_name": "Game",
+  "game_name": "python",
   "engine_hint": "unknown",
-  "binary": "C:/Games/MyGame/GameAssembly.dll",
-  "module_name": "GameAssembly.dll",
+  "binary": "/CoQ.exe",
+  "module_name": "python.exe",
   "observation_dimensions": 2,
   "state_variables": {
     "hp": {
@@ -11,7 +11,7 @@
       "max": 100.0,
       "role": "health",
       "pointer_chain": {
-        "base": "GameAssembly.dll+0x1A3F80",
+        "base": "python.exe+0x1A3F80",
         "offsets": [
           16,
           72,
@@ -29,7 +29,7 @@
       "max": 100.0,
       "role": "scalar",
       "pointer_chain": {
-        "base": "GameAssembly.dll+0x1A3F80",
+        "base": "python.exe+0x1A3F80",
         "offsets": [
           16,
           72,

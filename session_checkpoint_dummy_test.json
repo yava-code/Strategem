@@ -1,0 +1,93 @@
+{
+  "session_id": "dummy_test",
+  "game_exe": "10456",
+  "game_window_title": "",
+  "module_name": "python.exe",
+  "ghidra_binary_path": "/CoQ.exe",
+  "scan_type": "float",
+  "seed_deltas": [
+    {
+      "field": "health",
+      "old_value": 100.0,
+      "new_value": 100.0,
+      "confidence": 1.0
+    },
+    {
+      "field": "pos_x",
+      "old_value": 5.0,
+      "new_value": 5.0,
+      "confidence": 0.9
+    }
+  ],
+  "ce_server_path": "D:/CE/cheatengine-mcp-bridge/MCP_Server/mcp_cheatengine.py",
+  "ghidra_server_path": "D:/hgidra/ghidra-mcp/bridge_mcp_ghidra.py",
+  "python_exe": "python",
+  "dry_run": false,
+  "resume": false,
+  "module_base": 5368709120,
+  "observed_deltas": [
+    {
+      "field": "health",
+      "old_value": 100.0,
+      "new_value": 100.0,
+      "confidence": 1.0
+    },
+    {
+      "field": "pos_x",
+      "old_value": 5.0,
+      "new_value": 5.0,
+      "confidence": 0.9
+    }
+  ],
+  "scan_candidates": {
+    "health": [],
+    "pos_x": []
+  },
+  "pointer_chains": {},
+  "raw_struct": null,
+  "static_analysis": {},
+  "action_manifest": {
+    "actions": [
+      {
+        "name": "MOVE_UP",
+        "keyBinding": null
+      },
+      {
+        "name": "MOVE_DOWN",
+        "keyBinding": null
+      },
+      {
+        "name": "MOVE_LEFT",
+        "keyBinding": null
+      },
+      {
+        "name": "MOVE_RIGHT",
+        "keyBinding": null
+      },
+      {
+        "name": "JUMP",
+        "keyBinding": null
+      },
+      {
+        "name": "ATTACK",
+        "keyBinding": null
+      },
+      {
+        "name": "INTERACT",
+        "keyBinding": null
+      },
+      {
+        "name": "MENU_OPEN",
+        "keyBinding": null
+      }
+    ],
+    "input_handler_addr": null,
+    "notes": null
+  },
+  "state_map_path": null,
+  "state_map": null,
+  "phase": "synthesize",
+  "errors": [
+    "struct_scout: no candidate addresses"
+  ]
+}

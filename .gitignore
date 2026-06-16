@@ -40,6 +40,7 @@ tb_logs/
 */tb_logs/
 output_*/
 runs/
+checkpoints/
 annotation_suggestions.json
 annotation_suggestions.md
 

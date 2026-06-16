@@ -1,0 +1,129 @@
+{
+  "summary": {
+    "game_name": "buggy_roguelike",
+    "state_fields": 5,
+    "actions": 4,
+    "oracles": 2,
+    "trace_frames": 13,
+    "oracle_hits": 3,
+    "unique_actions_seen": 4,
+    "status": "bug_found"
+  },
+  "oracle_hits": [
+    {
+      "frame": 2,
+      "name": "out_of_bounds",
+      "severity": "bug",
+      "source": "bridge_adapter_buggy_roguelike_fa60193cdd.out_of_bounds",
+      "state": {
+        "hp": 10.0,
+        "x": 10.0,
+        "y": 4.0,
+        "gold": 0,
+        "turn": 2
+      },
+      "action": "move_right"
+    },
+    {
+      "frame": 3,
+      "name": "out_of_bounds",
+      "severity": "bug",
+      "source": "bridge_adapter_buggy_roguelike_fa60193cdd.out_of_bounds",
+      "state": {
+        "hp": 10.0,
+        "x": 11.0,
+        "y": 4.0,
+        "gold": 0,
+        "turn": 3
+      },
+      "action": "move_right"
+    },
+    {
+      "frame": 4,
+      "name": "out_of_bounds",
+      "severity": "bug",
+      "source": "bridge_adapter_buggy_roguelike_fa60193cdd.out_of_bounds",
+      "state": {
+        "hp": 10.0,
+        "x": 10.0,
+        "y": 4.0,
+        "gold": 0,
+        "turn": 4
+      },
+      "action": "move_left"
+    }
+  ],
+  "action_counts": {
+    "move_right": 3,
+    "move_left": 3,
+    "wait": 3,
+    "pickup_gold": 3
+  },
+  "state_fields": {
+    "hp": {
+      "type": "float",
+      "min": 0.0,
+      "max": 10.0,
+      "role": "health",
+      "pointer_chain": null,
+      "struct_offset": null,
+      "dynamic_only": true,
+      "source": "sdk",
+      "initial_scan_value": 10.0,
+      "source_ref": "bridge_adapter_buggy_roguelike_fa60193cdd.hp",
+      "source_meta": {}
+    },
+    "x": {
+      "type": "float",
+      "min": 0.0,
+      "max": 9.0,
+      "role": "coordinate_x",
+      "pointer_chain": null,
+      "struct_offset": null,
+      "dynamic_only": true,
+      "source": "sdk",
+      "initial_scan_value": 8.0,
+      "source_ref": "bridge_adapter_buggy_roguelike_fa60193cdd.position[0]",
+      "source_meta": {}
+    },
+    "y": {
+      "type": "float",
+      "min": 0.0,
+      "max": 9.0,
+      "role": "coordinate_y",
+      "pointer_chain": null,
+      "struct_offset": null,
+      "dynamic_only": true,
+      "source": "sdk",
+      "initial_scan_value": 4.0,
+      "source_ref": "bridge_adapter_buggy_roguelike_fa60193cdd.position[1]",
+      "source_meta": {}
+    },
+    "gold": {
+      "type": "int",
+      "min": 0.0,
+      "max": 9999.0,
+      "role": "scalar",
+      "pointer_chain": null,
+      "struct_offset": null,
+      "dynamic_only": true,
+      "source": "sdk",
+      "initial_scan_value": 0.0,
+      "source_ref": "bridge_adapter_buggy_roguelike_fa60193cdd.gold",
+      "source_meta": {}
+    },
+    "turn": {
+      "type": "int",
+      "min": 0.0,
+      "max": 1000.0,
+      "role": "scalar",
+      "pointer_chain": null,
+      "struct_offset": null,
+      "dynamic_only": true,
+      "source": "sdk",
+      "initial_scan_value": 0.0,
+      "source_ref": "bridge_adapter_buggy_roguelike_fa60193cdd.turn",
+      "source_meta": {}
+    }
+  }
+}

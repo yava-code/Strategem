@@ -112,7 +112,7 @@ def export_contract(
     out_dir: str | Path,
     *,
     game_name: str | None = None,
-    trace_actions: int = 8,
+    trace_actions: int = 12,
 ) -> dict[str, Path]:
     adapter_path = Path(adapter).resolve()
     load_adapter(adapter_path)
@@ -135,7 +135,14 @@ def export_contract(
     paths["action_map"].write_text(json.dumps(action_map(), indent=2), encoding="utf-8")
     paths["oracle_map"].write_text(json.dumps(oracle_map(), indent=2), encoding="utf-8")
 
-    actions = list(REGISTRY.actions)[:trace_actions]
+    names = list(REGISTRY.actions)
+    actions = []
+    while names and len(actions) < trace_actions:
+        for name in names:
+            actions.extend([name, name, name])
+            if len(actions) >= trace_actions:
+                break
+    actions = actions[:trace_actions]
     runtime.run_trace(actions, paths["trace"])
     paths["manifest"].write_text(
         json.dumps(

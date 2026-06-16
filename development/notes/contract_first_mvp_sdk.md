@@ -15,7 +15,7 @@ Completed on 2026-06-14.
   - `src/bridge_maker.py` is the contract-first CLI.
 - Added `examples/annotated_dummy.py` as the canonical no-MCP smoke target.
 - Added `adapters/noita/bridge_template.py` and README as the NoitaRL adapter shape.
-- Renamed the old CoQ/socket PRD to `PRD_old_coq_socket.md` and added a new contract-first `PRD.md`.
+- Replaced the old CoQ/socket PRD with a new contract-first `PRD.md`.
 - Extended `StateVariable` with SDK source metadata fields.
 
 ## Verified
@@ -38,3 +38,35 @@ The SDK/adapter path now works without Cheat Engine, Ghidra, Ray, Wandb, Modal, 
 - Add tests around the SDK exporter and `SDKGymEnv`.
 - Connect `swarm_trainer.py` to SDK-generated env wrappers, not only the current pymem `LiveEnv`.
 - Build the real NoitaRL adapter once the project path/API is available.
+
+## 2026-06-16 grant-demo hardening
+
+- Added `examples/buggy_roguelike.py`, a tiny annotated roguelike with an intentional right-edge movement bug.
+- Added `src/sdk/report.py` for JSON/HTML reports from exported contracts and traces.
+- Added `python -m bridge_maker report` and `python -m bridge_maker demo`.
+- Updated trace generation to stress actions in short bursts so oracle bugs are actually exercised.
+- Rebuilt the grant demo at `runs/grant_demo`:
+  - 5 state fields,
+  - 4 actions,
+  - 2 oracles,
+  - 13 trace frames,
+  - 3 `out_of_bounds` oracle hits.
+- Added `grant_materials/bridge_maker_grant_presentation.pptx` and `grant_materials/proof_of_work.md`.
+- Removed stale CoQ/socket/checkpoint/state-map artifacts from the active tree.
+
+## 2026-06-16 external adapter proof
+
+- Inspected `probable-basilisk/noita-ws-api` locally at commit `47054b0`.
+- Added `adapters/noita_ws/README.md` documenting how the WebSocket/Lua bridge maps into Bridge-Maker's contract model.
+- Reworked `adapters/noita/bridge_template.py` into a `Protocol`-based binder instead of fake placeholder methods.
+- Added `tests/test_contract_sdk.py` to lock the SDK MVP:
+  - contract export,
+  - `StateMap` validation,
+  - JSON/HTML report generation,
+  - generated SDK env import,
+  - direct `SDKGymEnv` smoke,
+  - deterministic CodeScout suggestions.
+- Added `adapters/noita_ws/session.py` and `tests/test_noita_ws_session.py`:
+  - Python-side WebSocket server waits for Noita-style heartbeat,
+  - raw Lua eval commands round-trip through a fake Noita client,
+  - BridgeRuntime samples and steps over the WebSocket-backed adapter contract.

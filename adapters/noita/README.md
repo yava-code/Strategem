@@ -23,4 +23,13 @@ def move_left():
     controls.press("a")
 ```
 
-Once the NoitaRL repo path is available, copy `bridge_template.py` to `bridge.py` and replace the local placeholders with real NoitaRL calls.
+Once the NoitaRL repo path is available, create a tiny `bridge.py` that imports the real bindings and calls `bind(real_noita)`.
+
+```python
+from adapters.noita.bridge_template import bind
+from noita_rl_project import noita
+
+bind(noita)
+```
+
+The template does not fake Noita. It defines the contract shape that a real NoitaRL binding must satisfy.

@@ -56,7 +56,7 @@ async def step_scan(health_value: float) -> list[str]:
     """Run persistent scan for health value, refine with exact new value from log, return candidates.
 
     NOTE: CEClient spawns a subprocess mcp_cheatengine.py that connects to CE via
-    \\.\pipe\CE_MCP_Bridge_v99.  If Claude Desktop already holds that pipe, the
+    \\\\.\\pipe\\CE_MCP_Bridge_v99.  If Claude Desktop already holds that pipe, the
     subprocess call will fail with "Bridge is not reachable".  In that case run
     the test standalone (without Claude Desktop CE MCP loaded) or use the direct
     MCP tools in the Claude session instead.

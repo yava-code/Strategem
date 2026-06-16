@@ -64,6 +64,22 @@ Generate annotation suggestions:
 python -m bridge_maker suggest --repo examples --out runs/example_suggestions
 ```
 
+## Documentation and pitch
+
+Open the static documentation site:
+
+```powershell
+start docs\index.html
+```
+
+Key docs:
+
+- `docs/getting-started.md`
+- `docs/sdk-reference.md`
+- `docs/architecture.md`
+- `docs/status.md`
+- `grant_materials/presentation_uk.md`
+
 ## Current MVP status
 
 Working:

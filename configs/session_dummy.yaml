@@ -14,15 +14,20 @@
 
 session_id: dummy_test
 
-game_exe: "10456"
+game_exe: "python.exe"   # will be auto-resolved to most recent python.exe by attach_game
 game_window_title: ""           # no window — console only
 module_name: "python.exe"
 ghidra_binary_path: "/CoQ.exe"  # use CoQ.exe already in Ghidra project for static analysis test
 
 scan_type: "float"
 
+# log_file: memory_scout reads current field values from this file for auto-refinement.
+# Set to the dummy_target.py output log.
+log_file: "tools/dummy_target.log"
+
 # seed_deltas: used when game_window_title is empty (no GUI / headless target).
 # VisionScout skips VLM and uses these directly as observed_deltas.
+# new_value = initial value to scan for (run orchestrator right after starting target).
 seed_deltas:
   - {field: "health",  old_value: 100.0, new_value: 100.0, confidence: 1.0}
   - {field: "pos_x",   old_value: 5.0,   new_value: 5.0,   confidence: 0.9}

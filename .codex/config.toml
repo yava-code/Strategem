@@ -1,0 +1,10 @@
+[mcp_servers.cheatengine]
+command = "python"
+args = ['D:\CE\cheatengine-mcp-bridge\MCP_Server\mcp_cheatengine.py']
+
+[mcp_servers.ghidra]
+command = "D:/conda/python.exe"
+args = ["D:/hgidra/ghidra-mcp/bridge_mcp_ghidra.py"]
+
+[mcp_servers.ghidra.env]
+PYTHONIOENCODING = "utf-8"

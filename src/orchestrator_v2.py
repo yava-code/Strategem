@@ -79,6 +79,7 @@ class SessionState(TypedDict, total=False):
     ghidra_binary_path: str
     scan_type: str
     seed_deltas: list[dict]
+    log_file: Optional[str]
     ce_server_path: str
     ghidra_server_path: str
     python_exe: str
@@ -113,6 +114,7 @@ def _default_state(cfg: dict, dry_run: bool = False, resume: bool = False) -> Se
         ghidra_binary_path=cfg.get("ghidra_binary_path", ""),
         scan_type=cfg.get("scan_type", "float"),
         seed_deltas=cfg.get("seed_deltas", []),
+        log_file=cfg.get("log_file"),
         ce_server_path=mcp_cfg.get("ce_server_path", ""),
         ghidra_server_path=mcp_cfg.get("ghidra_server_path", ""),
         python_exe=mcp_cfg.get("python_exe", "python"),
@@ -152,10 +154,24 @@ async def attach_game(state: SessionState) -> dict:
         return updates
 
     # CE attach + module base resolution
+    # If game_exe is a .exe name (not a numeric PID), try to read exact PID from
+    # tools/dummy_target.pid so we attach to the right instance.
+    game_exe = state["game_exe"]
+    if game_exe.lower().endswith(".exe"):
+        pid_file = Path("tools/dummy_target.pid")
+        if pid_file.exists():
+            try:
+                pid_from_file = pid_file.read_text().strip()
+                if pid_from_file.isdigit():
+                    game_exe = pid_from_file
+                    print(f"[Attach] Using PID {game_exe} from tools/dummy_target.pid")
+            except Exception:
+                pass
+
     ce_ok = False
     try:
         async with CEClient(state["ce_server_path"], python_exe=state.get("python_exe", "python")) as ce:
-            result = await ce.attach(state["game_exe"])
+            result = await ce.attach(game_exe)
             if not result.success:
                 print(f"[Attach] WARNING: CE attach failed for '{state['game_exe']}' — continuing with defaults")
             else:
@@ -166,7 +182,10 @@ async def attach_game(state: SessionState) -> dict:
                     updates["module_base"] = base
                     print(f"[Attach] {state['module_name']} @ 0x{base:X}")
                 else:
-                    print(f"[Attach] WARNING: module '{state['module_name']}' not found — using 0x140000000")
+                    # Log first few module names to help diagnose name mismatch
+                    mods = await ce.list_modules()
+                    names = [m.get("name", "?") for m in mods[:5]]
+                    print(f"[Attach] WARNING: '{state['module_name']}' not in modules. First 5: {names}")
                     updates["module_base"] = 0x140000000
     except Exception as exc:
         msg = str(exc)
@@ -288,6 +307,7 @@ async def memory_scout(state: SessionState) -> dict:
             observed_deltas=deltas,
             scan_type=state.get("scan_type", "float"),
             python_exe=state.get("python_exe", "python"),
+            log_file=state.get("log_file"),
         )
         updates["scan_candidates"] = candidates
         print(f"[MemoryScout] Done: {list(candidates.keys())}")
@@ -384,23 +404,16 @@ async def pointer_scout(state: SessionState) -> dict:
                 errors.append(f"PointerScout CE verify failed for {field}: {exc}")
             chains[field] = chain_from_ghidra
         else:
-            # Strategy B: guide user through manual CE pointer scanner
-            print(f"\n[PointerScout] MANUAL STEP required for field: {field}")
-            print(f"  Live address: {addrs[0]}")
-            print("  In Cheat Engine: right-click this address -> Pointer Scan")
-            print("  Save pointer scan results, restart the game, run pointer rescan.")
-            base_in = input(f"  Enter base (e.g. 'GameAssembly.dll+0x1A3F80'): ").strip()
-            offsets_in = input("  Enter offsets as comma-separated hex (e.g. 0x10,0x48,0x2C): ").strip()
-            try:
-                offsets = [int(o.strip(), 16) for o in offsets_in.split(",") if o.strip()]
-                chains[field] = {
-                    "base": base_in,
-                    "offsets": offsets,
-                    "verified": False,
-                    "source": "manual",
-                }
-            except ValueError as exc:
-                errors.append(f"PointerScout: invalid offset input for {field}: {exc}")
+            # Strategy B: Ghidra had no xrefs → heap/dynamic object.
+            # Store the live address directly (dynamic_only — no static pointer chain).
+            print(f"[PointerScout] {field}: no Ghidra xrefs — heap object, storing live addr directly")
+            chains[field] = {
+                "base": addrs[0],
+                "offsets": [],
+                "verified": False,
+                "source": "dynamic",
+                "dynamic_only": True,
+            }
 
     updates["pointer_chains"] = chains
     updates["errors"] = errors
@@ -558,7 +571,11 @@ async def static_scout(state: SessionState) -> dict:
         if not addrs:
             continue
         live_addr = parse_addr(addrs[0])
-        static_off_str = fmt_offset(live_to_static(live_addr, module_base) if module_base else live_addr)
+        static_off = live_to_static(live_addr, module_base) if module_base else live_addr
+        # Heap objects have live_addr < module_base → negative offset → no static xrefs
+        if static_off < 0:
+            continue
+        static_off_str = fmt_offset(static_off)
 
         try:
             async with GhidraClient(state["ghidra_server_path"], python_exe=state.get("python_exe", "python")) as gh:
@@ -732,7 +749,7 @@ async def synthesize(state: SessionState) -> dict:
 
     state_vars: dict[str, StateVariable] = {}
 
-    if judgment:
+    if judgment and judgment.accepted_fields:
         for f in judgment.accepted_fields:
             _add_state_var(f, chains, state_vars)
     else:
@@ -754,12 +771,40 @@ async def synthesize(state: SessionState) -> dict:
             )
 
     if not state_vars:
-        errors.append("synthesize: no state variables — pipeline produced no usable fields")
-        updates["errors"] = errors
-        return updates
+        # Last-resort fallback: build directly from scan_candidates + pointer_chains
+        scan_candidates = state.get("scan_candidates", {})
+        if scan_candidates:
+            print("[Synthesize] No struct data — building from scan_candidates directly")
+            _ROLE_HINTS = {
+                "health": SemanticRole.HEALTH, "hp": SemanticRole.HEALTH,
+                "pos_x": SemanticRole.COORDINATE_X, "x": SemanticRole.COORDINATE_X,
+                "pos_y": SemanticRole.COORDINATE_Y, "y": SemanticRole.COORDINATE_Y,
+                "mana": SemanticRole.SCALAR, "stamina": SemanticRole.SCALAR,
+                "turn": SemanticRole.TIME, "score": SemanticRole.SCALAR,
+            }
+            _delta_map = {d["field"]: d.get("new_value") for d in state.get("observed_deltas", [])}
+            for fname, addrs in scan_candidates.items():
+                if not addrs:
+                    continue
+                chain_data = chains.get(fname)
+                sm_chain = _build_sm_chain(chain_data) if chain_data else None
+                role = _ROLE_HINTS.get(fname.lower(), SemanticRole.SCALAR)
+                state_vars[fname] = StateVariable(
+                    type="float", min=0.0, max=100.0,
+                    role=role,
+                    pointer_chain=sm_chain,
+                    struct_offset=None,
+                    dynamic_only=(chain_data.get("dynamic_only", False) if chain_data else True),
+                    source="scan_only",
+                    initial_scan_value=_delta_map.get(fname),
+                )
+        if not state_vars:
+            errors.append("synthesize: no state variables — pipeline produced no usable fields")
+            updates["errors"] = errors
+            return updates
 
     action_bindings = (
-        judgment.action_bindings if judgment else
+        judgment.action_bindings if (judgment and judgment.action_bindings) else
         [a.get("name", f"ACTION_{i}") for i, a in enumerate(action_manifest.get("actions", []))]
     )
     sm = StateMap(

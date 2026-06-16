@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any, Optional, Type, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 try:
     from groq import AsyncGroq
@@ -42,10 +42,15 @@ class PointerChainOutput(BaseModel):
 
 
 class StructAnalysisOutput(BaseModel):
-    class_name: Optional[str]
-    known_field_offset: int      # offset of the field we started from
-    adjacent_fields: list[dict]  # [{offset, guessed_type, candidate_name}]
+    class_name: Optional[str] = None
+    known_field_offset: int = 0       # offset of the field we started from
+    adjacent_fields: list[dict] = []  # [{offset, guessed_type, candidate_name}]
+    fields: list[dict] = []           # fallback key some LLMs emit
     notes: Optional[str] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.fields and not self.adjacent_fields:
+            self.adjacent_fields = self.fields
 
 
 class StaticAnalysisOutput(BaseModel):
@@ -78,10 +83,22 @@ class VLMObservation(BaseModel):
 
 class SynthesisJudgment(BaseModel):
     """General LLM output when synthesizing Scout results into state_map fields."""
-    accepted_fields: list[dict]  # [{name, min, max, role, pointer_chain or struct_offset}]
-    rejected_fields: list[str]   # field names with reasoning
-    action_bindings: list[str]   # final clean list
+    accepted_fields: list[dict] = []
+    rejected_fields: list[str] = []
+    action_bindings: list[str] = []
+    fields: list[dict] = []           # fallback: some LLMs emit this instead of accepted_fields
     notes: Optional[str] = None
+
+    @field_validator("fields", "accepted_fields", mode="before")
+    @classmethod
+    def _coerce_to_list(cls, v: Any) -> list:
+        if isinstance(v, dict):
+            return list(v.values()) if v else []
+        return v or []
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.fields and not self.accepted_fields:
+            self.accepted_fields = self.fields
 
 
 # ---------------------------------------------------------------------------

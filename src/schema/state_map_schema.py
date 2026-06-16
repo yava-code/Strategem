@@ -3,9 +3,9 @@ from __future__ import annotations
 import enum
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class SemanticRole(str, enum.Enum):
@@ -32,9 +32,12 @@ class StateVariable(BaseModel):
     max: float
     role: SemanticRole = SemanticRole.SCALAR
     pointer_chain: Optional[PointerChain] = None
-    struct_offset: Optional[int] = None  # offset within parent struct (white-box / Ghidra)
-    dynamic_only: bool = False           # no stable chain; requires re-scan each session
-    source: str = "discovery"            # "discovery" | "static" | "manual"
+    struct_offset: Optional[int] = None      # offset within parent struct (white-box / Ghidra)
+    dynamic_only: bool = False               # no stable chain; requires re-scan each session
+    source: str = "discovery"               # "discovery" | "static" | "manual"
+    initial_scan_value: Optional[float] = None  # value used during CE scan (for env re-scan at reset)
+    source_ref: Optional[str] = None         # SDK/adapter function path or static evidence pointer
+    source_meta: dict[str, Any] = Field(default_factory=dict)  # optional tool/agent evidence
 
     @model_validator(mode="after")
     def must_have_access_path(self) -> "StateVariable":

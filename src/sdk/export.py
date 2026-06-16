@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 from typing import Any
 
@@ -113,6 +114,8 @@ def export_contract(
     *,
     game_name: str | None = None,
     trace_actions: int = 12,
+    trace_strategy: str = "burst",
+    trace_seed: int | None = None,
 ) -> dict[str, Path]:
     adapter_path = Path(adapter).resolve()
     load_adapter(adapter_path)
@@ -136,19 +139,16 @@ def export_contract(
     paths["oracle_map"].write_text(json.dumps(oracle_map(), indent=2), encoding="utf-8")
 
     names = list(REGISTRY.actions)
-    actions = []
-    while names and len(actions) < trace_actions:
-        for name in names:
-            actions.extend([name, name, name])
-            if len(actions) >= trace_actions:
-                break
-    actions = actions[:trace_actions]
+    actions = plan_trace_actions(names, trace_actions, strategy=trace_strategy, seed=trace_seed)
     runtime.run_trace(actions, paths["trace"])
     paths["manifest"].write_text(
         json.dumps(
             {
                 "adapter": str(adapter_path),
                 "game_name": name,
+                "trace_actions": trace_actions,
+                "trace_strategy": trace_strategy,
+                "trace_seed": trace_seed,
                 "state_map": str(paths["state_map"]),
                 "action_map": str(paths["action_map"]),
                 "oracle_map": str(paths["oracle_map"]),
@@ -159,3 +159,28 @@ def export_contract(
         encoding="utf-8",
     )
     return paths
+
+
+def plan_trace_actions(
+    action_names: list[str],
+    steps: int,
+    *,
+    strategy: str = "burst",
+    seed: int | None = None,
+) -> list[str]:
+    if steps <= 0 or not action_names:
+        return []
+    if strategy == "cycle":
+        return [action_names[i % len(action_names)] for i in range(steps)]
+    if strategy == "random":
+        rng = random.Random(seed)
+        return [rng.choice(action_names) for _ in range(steps)]
+    if strategy == "burst":
+        actions = []
+        while len(actions) < steps:
+            for name in action_names:
+                actions.extend([name, name, name])
+                if len(actions) >= steps:
+                    break
+        return actions[:steps]
+    raise ValueError(f"Unknown trace strategy: {strategy}")

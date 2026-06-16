@@ -48,7 +48,9 @@ def out_of_bounds(s): return s.x > level.width
 Після цього:
 
 ```powershell
-python -m bridge_maker demo --out runs/grant_demo
+bridge-maker init --out bridge_maker_starter --game-name "My Game"
+bridge-maker validate --adapter bridge_maker_starter\bridge_adapter.py
+bridge-maker run --adapter bridge_maker_starter\bridge_adapter.py --out runs\my_game
 ```
 
 ## Слайд 5 - Pipeline
@@ -63,11 +65,19 @@ python -m bridge_maker demo --out runs/grant_demo
 ## Слайд 6 - Що вже працює
 
 - Python decorator SDK.
+- Install/diagnostic command: `bridge-maker doctor`.
+- First-run scaffold: `bridge-maker init`.
+- Adapter validation: `bridge-maker validate`.
+- One-command QA run: `bridge-maker run`.
 - Adapter loading.
 - Contract export.
 - SDK Gymnasium env.
 - Annotation suggestions.
 - JSON/HTML reports.
+- Reproduction actions and failing state in reports.
+- Reproducible trace strategies with seed control.
+- CI/nightly mode with `--fail-on-bug`.
+- GitHub Actions scaffold with `bridge-maker init-ci`.
 - Buggy roguelike with intentional bug.
 - Noita WebSocket adapter readiness note.
 - Unit tests green.
@@ -77,7 +87,7 @@ python -m bridge_maker demo --out runs/grant_demo
 Показати:
 
 1. `examples/buggy_roguelike.py`
-2. `python -m bridge_maker demo --out runs/grant_demo`
+2. `bridge-maker demo --out runs/grant_demo`
 3. `runs/grant_demo/state_map.json`
 4. `runs/grant_demo/trace.jsonl`
 5. `runs/grant_demo/report.html`
@@ -132,4 +142,3 @@ Value:
 це на продуктову workflow:
 
 **annotate once, run overnight, receive actionable QA evidence.**
-

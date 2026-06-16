@@ -41,11 +41,16 @@ def out_of_bounds(s): return s.x > level.width
 ## Що вже готово
 
 - Python decorator SDK.
+- Install diagnostics: `bridge-maker doctor`.
 - Adapter loader.
 - Contract export.
 - SDK Gymnasium environment.
 - Annotation suggestion scanner.
 - JSON/HTML bug reports.
+- Reproduction actions, previous state і failing state у bug reports.
+- Reproducible trace strategies: burst, cycle, random + seed.
+- CI/nightly mode: `--fail-on-bug` plus `run_summary.json`.
+- GitHub Actions scaffold: `bridge-maker init-ci`.
 - Buggy roguelike demo з oracle finding.
 - Noita WebSocket adapter readiness notes.
 - Unit tests проходять.
@@ -69,7 +74,7 @@ Black-box bot бачить пікселі і тисне кнопки. Bridge-Mak
 3. Запустити:
 
 ```powershell
-python -m bridge_maker demo --out runs/grant_demo
+bridge-maker demo --out runs/grant_demo
 ```
 
 4. Показати `state_map.json`.
@@ -81,4 +86,3 @@ python -m bridge_maker demo --out runs/grant_demo
 Це не фінальний продукт і не універсальний `.exe`-реверсер. Це вже працюючий
 contract-first MVP, який доводить правильну архітектуру: мінімальна семантика
 від розробника, автоматизація навколо неї.
-

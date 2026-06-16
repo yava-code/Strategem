@@ -21,3 +21,10 @@ Current product line:
 > Annotate existing gameplay semantics, export a contract, run automated QA, and
 > receive bug evidence.
 
+First-run path:
+
+```powershell
+bridge-maker init --out bridge_maker_starter --game-name "My Game"
+bridge-maker smoke --adapter bridge_maker_starter\bridge_adapter.py --steps 12
+bridge-maker run --adapter bridge_maker_starter\bridge_adapter.py --out runs\my_game --game-name "My Game"
+```

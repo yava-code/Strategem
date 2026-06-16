@@ -4,6 +4,9 @@ Contract-first automated game QA for indie developers.
 
 Bridge-Maker turns a small set of annotated gameplay functions into a semantic contract, a Gymnasium-compatible environment, and a bug report. The default path does not require Cheat Engine, Ghidra, Ray, cloud credentials, or reverse-engineering setup.
 
+Reports are meant to be actionable: oracle findings include the failing state,
+the previous state, and the short action sequence that reproduced the issue.
+
 ## Why this exists
 
 Fully automatic "point at any `.exe` and understand the game" is not a credible onboarding promise for ordinary teams. Bridge-Maker uses a smaller and more honest contract:
@@ -12,6 +15,28 @@ Fully automatic "point at any `.exe` and understand the game" is not a credible 
 2. Bridge-Maker exports `state_map.json`, `action_map.json`, `oracle_map.json`, and `trace.jsonl`.
 3. A generated SDK env or direct SDK runtime can be used by RL/training layers.
 4. Reports show concrete bug evidence from traces.
+
+## Install
+
+For the core SDK:
+
+```powershell
+pip install -e .
+bridge-maker --help
+bridge-maker doctor
+```
+
+Optional advanced layers are split into extras:
+
+```powershell
+pip install -e ".[training]"
+pip install -e ".[greybox]"
+pip install -e ".[mlops]"
+pip install -e ".[noita]"
+```
+
+Use `requirements.txt` for the full development sandbox. The normal indie
+developer path should start with the lightweight core install.
 
 ## Minimal example
 
@@ -35,12 +60,52 @@ def out_of_bounds(state):
     return state.x < 0 or state.x > 99
 ```
 
+## 15-minute start
+
+Create a working starter adapter:
+
+```powershell
+bridge-maker init --out bridge_maker_starter --game-name "My Game"
+```
+
+Then run the generated adapter:
+
+```powershell
+bridge-maker smoke --adapter bridge_maker_starter\bridge_adapter.py --steps 12
+bridge-maker run --adapter bridge_maker_starter\bridge_adapter.py --out runs\my_game --game-name "My Game"
+```
+
+The generated adapter is intentionally small and executable. Replace its bridge
+class internals with calls into your game, debug API, mod API, or test harness.
+`run` validates the adapter, exports the contract, generates the SDK env wrapper,
+and writes a report in one folder. Use `validate`, `export`, and `report`
+separately when you want finer control in CI.
+
+For longer deterministic runs:
+
+```powershell
+bridge-maker run --adapter bridge_maker_starter\bridge_adapter.py --out runs\my_game_random --trace-actions 200 --trace-strategy random --seed 42
+```
+
+For CI or nightly builds, make oracle hits fail the command while still writing
+all artifacts:
+
+```powershell
+bridge-maker run --adapter bridge_maker_starter\bridge_adapter.py --out runs\nightly --trace-actions 500 --trace-strategy random --seed 42 --fail-on-bug
+```
+
+Generate a GitHub Actions workflow:
+
+```powershell
+bridge-maker init-ci --adapter bridge_maker_starter\bridge_adapter.py
+```
+
 ## Demo
 
 The repository includes a tiny annotated roguelike with an intentional right-edge movement bug.
 
 ```powershell
-python -m bridge_maker demo --out runs/grant_demo
+bridge-maker demo --out runs/grant_demo
 ```
 
 Outputs:
@@ -55,13 +120,13 @@ Outputs:
 Run a direct Gymnasium smoke loop:
 
 ```powershell
-python -m bridge_maker smoke --adapter examples/buggy_roguelike.py --steps 20
+bridge-maker smoke --adapter examples/buggy_roguelike.py --steps 20
 ```
 
 Generate annotation suggestions:
 
 ```powershell
-python -m bridge_maker suggest --repo examples --out runs/example_suggestions
+bridge-maker suggest --repo examples --out runs/example_suggestions
 ```
 
 ## Documentation and pitch
@@ -90,6 +155,7 @@ Working:
 - Direct SDK Gymnasium environment
 - Deterministic annotation suggestions
 - JSON/HTML bug report
+- Reproduction steps in oracle findings
 - NoitaRL adapter template
 - Noita WebSocket API readiness notes from a real external repo inspection
 - Executable Noita WebSocket session test using a fake Noita client

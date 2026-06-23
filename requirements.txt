@@ -5,6 +5,11 @@ matplotlib>=3.7.0
 pyyaml>=6.0
 tensorboard>=2.12.0
 pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# ── Phase 3/4: live env (pymem + pydirectinput) ───────────────────────────────
+pymem>=1.13.0
+pydirectinput>=1.0.4
 
 # ── Phase 1: Swarm orchestration ─────────────────────────────────────────────
 langgraph>=0.2.0            # LangGraph StateGraph orchestrator
@@ -26,8 +31,13 @@ pywin32>=306                # Window handle resolution (FindWindow)
 # google-generativeai    # Gemini backend for Instructor
 # openai>=1.0.0          # OpenAI backend for Instructor
 
-# --- Optional: Phase 3 distributed training (train_rllib) ---
-# ray[rllib]>=2.9.0      # rollout workers + built-in Curiosity ICM
+# --- Optional: Phase 3/4 distributed training (train_rllib / swarm_trainer) ---
+ray[rllib]>=2.9.0      # rollout workers + built-in Curiosity ICM
+
+# --- Optional: Phase 4 MLOps (swarm_trainer) ---
+# wandb>=0.15.0              # Experiment tracking          (requires WANDB_API_KEY)
+# modal>=0.60.0              # Serverless GPU compute       (requires MODAL_TOKEN_ID)
+# azure-storage-blob>=12.0.0 # Azure checkpoint sync        (requires AZURE_STORAGE_CONNECTION_STRING)
 
 # --- Optional: Phase 5 engine bridges (engine_bridges) ---
 # grpcio>=1.60.0         # Unreal Learning Agents transport

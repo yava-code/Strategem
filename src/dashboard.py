@@ -19,7 +19,11 @@ telemetry_data: Dict[str, Any] = {
     "player_pos": [50.0, 50.0],
     "goal_pos": [90.0, 90.0],
     "map_size": [100.0, 100.0],
-    "agents": {}  # swarm roster: name -> {step, extrinsic, intrinsic, anomalies, profile}
+    "agents": {},  # swarm roster: name -> {step, extrinsic, intrinsic, anomalies, profile}
+    "training_iteration": 0,
+    "intrinsic_reward":   0.0,
+    "freeze_events":      0,
+    "oracle_log":         [],  # list of {"time": "HH:MM:SS", "message": str}
 }
 
 class DashboardHTTPHandler(http.server.BaseHTTPRequestHandler):
@@ -249,6 +253,31 @@ class DashboardHTTPHandler(http.server.BaseHTTPRequestHandler):
             </div>
 
             <div class="card">
+                <div class="card-title">RL Swarm Metrics</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div>
+                        <span class="stat-unit">ITERATION</span>
+                        <div class="stat-val" id="val-iteration" style="font-size:24px;">0</div>
+                    </div>
+                    <div>
+                        <span class="stat-unit">ICM REWARD</span>
+                        <div class="stat-val" id="val-icm" style="font-size:24px; color: var(--neon-pink);">0.000</div>
+                    </div>
+                    <div>
+                        <span class="stat-unit">FREEZES</span>
+                        <div class="stat-val" id="val-freeze" style="font-size:24px; color: var(--neon-yellow);">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Oracle Actions</div>
+                <div id="oracle-log" style="max-height:140px;overflow-y:auto;font-family:'Consolas','Courier New',monospace;font-size:11px;color:#cce;">
+                    <div style="color:var(--text-sub);">No oracle actions yet.</div>
+                </div>
+            </div>
+
+            <div class="card">
                 <div class="card-title">QA Swarm Testers</div>
                 <div id="swarm-list" style="display:flex; flex-direction:column; gap:8px;">
                     <div style="color: var(--text-sub); font-size: 12px;">No agents reporting yet...</div>
@@ -391,6 +420,16 @@ class DashboardHTTPHandler(http.server.BaseHTTPRequestHandler):
                 .then(data => {
                     document.getElementById("val-step").innerText = data.step;
                     document.getElementById("val-anomalies").innerText = data.anomalies.length;
+                    document.getElementById("val-iteration").innerText = data.training_iteration || 0;
+                    document.getElementById("val-icm").innerText = ((data.intrinsic_reward) || 0).toFixed(3);
+                    document.getElementById("val-freeze").innerText = data.freeze_events || 0;
+                    if (data.oracle_log && data.oracle_log.length > 0) {
+                        document.getElementById("oracle-log").innerHTML =
+                            data.oracle_log.slice().reverse().map(function(e) {
+                                return '<div style="margin:2px 0;padding:4px;background:rgba(0,0,0,0.3);border-radius:4px;">' +
+                                       '<span style="color:#888">[' + e.time + ']</span> ' + e.message + '</div>';
+                            }).join('');
+                    }
 
                     drawMap(data);
 
@@ -477,6 +516,11 @@ class DashboardServer:
         self.server: Optional[socketserver.TCPServer] = None
         self.thread: Optional[threading.Thread] = None
 
+    def __reduce__(self):
+        # When captured in algo.save() state, serialize as an unstarted instance.
+        # Thread/lock objects are not serializable; the live server is not restored.
+        return (DashboardServer, (self.port,))
+
     def start(self):
         socketserver.TCPServer.allow_reuse_address = True
         self.server = socketserver.TCPServer(("", self.port), DashboardHTTPHandler)
@@ -542,6 +586,32 @@ class DashboardServer:
         global telemetry_data
         with telemetry_lock:
             telemetry_data["positions"].append([float(x), float(y)])
+
+    @staticmethod
+    def log_oracle(message: str) -> None:
+        """Record an Oracle click action and increment the freeze_events counter."""
+        import time as _t
+        global telemetry_data
+        with telemetry_lock:
+            telemetry_data["oracle_log"].append({
+                "time":    _t.strftime("%H:%M:%S"),
+                "message": message,
+            })
+            telemetry_data["oracle_log"] = telemetry_data["oracle_log"][-50:]
+            telemetry_data["freeze_events"] = telemetry_data.get("freeze_events", 0) + 1
+
+    @staticmethod
+    def update_training_metrics(
+        iteration: int,
+        intrinsic_reward: float,
+        freeze_events: int,
+    ) -> None:
+        """Push Phase 5 training metrics (iteration, ICM reward, freeze count)."""
+        global telemetry_data
+        with telemetry_lock:
+            telemetry_data["training_iteration"] = int(iteration)
+            telemetry_data["intrinsic_reward"]   = float(intrinsic_reward)
+            telemetry_data["freeze_events"]      = int(freeze_events)
 
     @staticmethod
     def log_anomaly(anomaly_type: str, details: Dict[str, Any], step: int):

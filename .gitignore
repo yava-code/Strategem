@@ -39,6 +39,9 @@ ENV/
 tb_logs/
 */tb_logs/
 output_*/
+runs/
+annotation_suggestions.json
+annotation_suggestions.md
 
 # Model weights and checkpoints
 *.ckpt
@@ -54,3 +57,4 @@ Thumbs.db
 *~
 *.swp
 
+.env

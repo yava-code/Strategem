@@ -5,52 +5,44 @@
   "module_name": "python.exe",
   "observation_dimensions": 2,
   "state_variables": {
-    "hp": {
+    "health": {
       "type": "float",
       "min": 0.0,
       "max": 100.0,
       "role": "health",
       "pointer_chain": {
-        "base": "python.exe+0x1A3F80",
-        "offsets": [
-          16,
-          72,
-          44
-        ],
-        "verified": true
+        "base": "0x1E12E4E997E",
+        "offsets": [],
+        "verified": false
       },
       "struct_offset": null,
-      "dynamic_only": false,
-      "source": "discovery"
+      "dynamic_only": true,
+      "source": "scan_only",
+      "initial_scan_value": 100.0
     },
-    "position_x": {
+    "pos_x": {
       "type": "float",
       "min": 0.0,
       "max": 100.0,
-      "role": "scalar",
+      "role": "coordinate_x",
       "pointer_chain": {
-        "base": "python.exe+0x1A3F80",
-        "offsets": [
-          16,
-          72,
-          44
-        ],
-        "verified": true
+        "base": "0xB7B33EA246",
+        "offsets": [],
+        "verified": false
       },
       "struct_offset": null,
-      "dynamic_only": false,
-      "source": "discovery"
+      "dynamic_only": true,
+      "source": "scan_only",
+      "initial_scan_value": 5.0
     }
   },
   "actions": {
-    "count": 6,
+    "count": 4,
     "bindings": [
-      "MOVE_N",
-      "MOVE_S",
-      "MOVE_E",
-      "MOVE_W",
-      "ATTACK",
-      "WAIT"
+      "MOVE_UP",
+      "MOVE_DOWN",
+      "MOVE_LEFT",
+      "MOVE_RIGHT"
     ],
     "detailed": null
   }

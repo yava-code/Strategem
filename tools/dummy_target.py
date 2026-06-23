@@ -12,12 +12,19 @@ Auto-ticks every TICK_SECS seconds so CE can be attached without
 needing keyboard input. Prints struct address so you can verify CE found
 the right location.
 """
+import argparse
 import ctypes
 import os
 import sys
 import time
 
 TICK_SECS = 20  # seconds between state changes (gives time for scan rounds)
+
+_ap = argparse.ArgumentParser(add_help=False)
+_ap.add_argument("--loop",      action="store_true", help="Respawn health instead of exiting")
+_ap.add_argument("--tick-secs", type=float, default=TICK_SECS, help="Seconds per tick")
+_args, _ = _ap.parse_known_args()
+TICK_SECS = _args.tick_secs
 
 
 class PlayerState(ctypes.Structure):
@@ -43,6 +50,11 @@ BASE_ADDR   = ctypes.addressof(state)
 HP_ADDR     = BASE_ADDR + PlayerState.health.offset
 POS_X_ADDR  = BASE_ADDR + PlayerState.pos_x.offset
 
+# ── Write PID file so orchestrator can attach to the correct instance ────────
+_PID_FILE = os.path.join(os.path.dirname(__file__), "dummy_target.pid")
+with open(_PID_FILE, "w") as _f:
+    _f.write(str(os.getpid()))
+
 # ── Print discovery anchor info ──────────────────────────────────────────────
 print(f"[DummyTarget] PID        : {os.getpid()}", flush=True)
 print(f"[DummyTarget] struct addr: 0x{BASE_ADDR:016X}", flush=True)
@@ -59,7 +71,7 @@ def _print_state():
         flush=True,
     )
 
-try:
+def _run_life():
     while state.health > 0:
         _print_state()
         time.sleep(TICK_SECS)
@@ -67,6 +79,21 @@ try:
         state.pos_x  += 1.0
         state.pos_y  += 0.5
         state.turn   += 1
+
+try:
+    if _args.loop:
+        life = 0
+        while True:
+            life += 1
+            state.health = 100.0
+            state.pos_x  = 5.0
+            state.pos_y  = 5.0
+            print(f"[DummyTarget] --- Life {life} ---", flush=True)
+            _run_life()
+            _print_state()
+            print("[DummyTarget] Respawn", flush=True)
+    else:
+        _run_life()
 except KeyboardInterrupt:
     pass
 

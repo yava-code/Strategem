@@ -39,6 +39,9 @@ ray[rllib]>=2.9.0      # rollout workers + built-in Curiosity ICM
 # modal>=0.60.0              # Serverless GPU compute       (requires MODAL_TOKEN_ID)
 # azure-storage-blob>=12.0.0 # Azure checkpoint sync        (requires AZURE_STORAGE_CONNECTION_STRING)
 
+# --- Optional: Noita WebSocket adapter ---
+websockets>=12.0             # Python-side server for Noita mod heartbeat / raw Lua command loop
+
 # --- Optional: Phase 5 engine bridges (engine_bridges) ---
 # grpcio>=1.60.0         # Unreal Learning Agents transport
 # mlagents-envs>=1.0.0   # Unity ML-Agents adaptor

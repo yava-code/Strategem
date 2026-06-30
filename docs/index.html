@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bridge-Maker Docs</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">BM</div>
+      <div>
+        <strong>Bridge-Maker</strong>
+        <span>Contract-first Game QA</span>
+      </div>
+    </div>
+    <nav>
+      <a href="#overview">Огляд</a>
+      <a href="#flow">Як це працює</a>
+      <a href="#install">Швидкий старт</a>
+      <a href="#sdk">SDK decorators</a>
+      <a href="#cli">CLI</a>
+      <a href="#outputs">Артефакти</a>
+      <a href="#status">Що готово</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#pitch">Як презентувати</a>
+    </nav>
+  </aside>
+
+  <main>
+    <section class="hero" id="overview">
+      <p class="eyebrow">Indie QA automation without PDDL or binary magic</p>
+      <h1>Bridge-Maker перетворює маленький семантичний контракт гри на автоматизований QA/RL тестер.</h1>
+      <p class="lead">
+        Розробник не пише PDDL, не налаштовує Ghidra і не вчить Ray/RLlib. Він позначає
+        важливі стани, дії та оракули через прості декоратори. Bridge-Maker експортує
+        контракт, запускає середовище і формує звіт з доказами багів.
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="#install">Почати</a>
+        <a class="button" href="../grant_materials/presentation_uk.md">Українська презентація</a>
+      </div>
+    </section>
+
+    <section class="grid three">
+      <article class="card">
+        <h3>1. Annotate</h3>
+        <p>Позначте існуючі getters, command handlers та invariant checks.</p>
+      </article>
+      <article class="card">
+        <h3>2. Export</h3>
+        <p>Отримайте `state_map.json`, `action_map.json`, `oracle_map.json` і `trace.jsonl`.</p>
+      </article>
+      <article class="card">
+        <h3>3. Report</h3>
+        <p>Згенеруйте HTML/JSON звіт з oracle hits, reproduction actions і станами помилки.</p>
+      </article>
+    </section>
+
+    <section id="flow">
+      <h2>Як це працює</h2>
+      <div class="flow">
+        <div>Game code або adapter</div>
+        <span>→</span>
+        <div>Bridge-Maker decorators</div>
+        <span>→</span>
+        <div>Semantic contract</div>
+        <span>→</span>
+        <div>Gym env / traces</div>
+        <span>→</span>
+        <div>Bug report</div>
+      </div>
+      <p>
+        Важлива зміна стратегії: Bridge-Maker більше не обіцяє магічно зрозуміти будь-який `.exe`.
+        Сильна частина системи починається тоді, коли є мінімальний контракт: що таке HP,
+        де позиція, які дії легальні, які стани є багами.
+      </p>
+    </section>
+
+    <section id="install">
+      <h2>Швидкий старт</h2>
+      <pre><code>pip install -e .
+bridge-maker --help
+bridge-maker doctor
+bridge-maker init --out bridge_maker_starter --game-name "My Game"
+bridge-maker smoke --adapter bridge_maker_starter\bridge_adapter.py --steps 12
+bridge-maker run --adapter bridge_maker_starter\bridge_adapter.py --out runs\my_game --game-name "My Game"</code></pre>
+      <p>
+        `init` створює перший adapter і quickstart guide. `run` запускає базовий
+        MVP loop: validate → export → generated SDK env → report. Перевірено в
+        репозиторії: CLI працює, unit tests проходять, run створює `report.html`.
+      </p>
+    </section>
+
+    <section id="sdk">
+      <h2>SDK decorators</h2>
+      <p>
+        Розробник не має писати нові системи тільки для Bridge-Maker. Він декорує вже існуючі
+        функції або тонкий adapter навколо рушія/моду/реверс-проєкту.
+      </p>
+      <pre><code>from bridge_maker import bm
+
+@bm.hp(bounds=(0, 100))
+def hp():
+    return player.hp
+
+@bm.position(x="x", y="y", bounds=(0, 100))
+def position():
+    return player.x, player.y
+
+@bm.move("right", key="d")
+def move_right():
+    player.move_right()
+
+@bm.oracle("out_of_bounds", severity="bug")
+def out_of_bounds(state):
+    return state.x < 0 or state.x > 99</code></pre>
+      <div class="callout">
+        <strong>Принцип:</strong> Bridge-Maker не змушує команду вивчати RL. Він просить дати
+        мінімальну семантику, яку розробник і так знає.
+      </div>
+    </section>
+
+    <section id="cli">
+      <h2>CLI</h2>
+      <table>
+        <thead><tr><th>Команда</th><th>Що робить</th></tr></thead>
+        <tbody>
+          <tr><td><code>init</code></td><td>Створює робочий starter adapter і quickstart guide для першої інтеграції.</td></tr>
+          <tr><td><code>init-ci</code></td><td>Створює GitHub Actions workflow для nightly Bridge-Maker QA.</td></tr>
+          <tr><td><code>doctor</code></td><td>Перевіряє встановлення SDK, core dependencies і optional extras.</td></tr>
+          <tr><td><code>suggest</code></td><td>Сканує Python-код і пропонує Bridge-Maker decorators.</td></tr>
+          <tr><td><code>validate</code></td><td>Перевіряє, чи adapter має достатньо state/actions/oracles для корисного QA-звіту.</td></tr>
+          <tr><td><code>run</code></td><td>Виконує validate, export, env generation і report в одну папку.</td></tr>
+          <tr><td><code>export</code></td><td>Завантажує adapter і експортує контрактні JSON файли.</td></tr>
+          <tr><td><code>generate</code></td><td>Генерує SDK-backed Gym wrapper з contract folder.</td></tr>
+          <tr><td><code>report</code></td><td>Генерує JSON/HTML звіт з trace artifacts.</td></tr>
+          <tr><td><code>smoke</code></td><td>Робить короткий Gym loop без CE/Ghidra/Ray.</td></tr>
+          <tr><td><code>demo</code></td><td>Запускає grant-ready proof на buggy roguelike.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="outputs">
+      <h2>Артефакти</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>Contract files</h3>
+          <ul>
+            <li><code>state_map.json</code> - observation schema</li>
+            <li><code>action_map.json</code> - legal action surface</li>
+            <li><code>oracle_map.json</code> - bug/invariant checks</li>
+            <li><code>contract.json</code> - manifest</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Evidence files</h3>
+          <ul>
+            <li><code>trace.jsonl</code> - action/state/oracle frames</li>
+            <li><code>report.json</code> - machine-readable summary</li>
+            <li><code>report.html</code> - shareable QA report</li>
+            <li><code>sdk_env_generated.py</code> - generated env wrapper</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="status">
+      <h2>Що вже готово</h2>
+      <ul class="checklist">
+        <li>Python decorator SDK: `@bm.hp`, `@bm.position`, `@bm.action`, `@bm.oracle`, `@bm.reset`, `@bm.snapshot`.</li>
+        <li>Adapter loader і runtime registry.</li>
+        <li>Contract export у `state_map`, `action_map`, `oracle_map`, `trace`.</li>
+        <li>Trace strategies: burst, cycle, random з фіксованим seed.</li>
+        <li>CI mode: `--fail-on-bug` і `run_summary.json` для nightly builds.</li>
+        <li>GitHub Actions scaffold через `bridge-maker init-ci`.</li>
+        <li>SDK Gymnasium environment для smoke loops.</li>
+        <li>AST CodeScout v0 для annotation suggestions.</li>
+        <li>JSON/HTML bug report з oracle evidence.</li>
+        <li>Reproduction actions, previous state і failing state для кожного oracle finding.</li>
+        <li>Buggy roguelike demo з реальним oracle hit.</li>
+        <li>Noita WebSocket adapter readiness notes і fake-client test.</li>
+      </ul>
+      <p class="muted">
+        Grey-box CE/Ghidra, Ray/RLlib і dashboard існують у репозиторії як дослідницький/наступний шар,
+        але основний презентований MVP зараз - контракт, env і bug report без складного setup.
+      </p>
+    </section>
+
+    <section id="roadmap">
+      <h2>Roadmap</h2>
+      <ol class="timeline">
+        <li><strong>MVP:</strong> SDK annotations → contract → trace → report. Status: ready.</li>
+        <li><strong>Adapter proof:</strong> live Noita/NoitaRL adapter over known reverse project.</li>
+        <li><strong>Agent assist:</strong> CodeScout/TraceScout пропонують missing annotations.</li>
+        <li><strong>Training:</strong> contract-backed Gym env feeds Ray/RLlib + curiosity.</li>
+        <li><strong>Overnight UX:</strong> one command returns bug report, replay traces, and trainer artifacts.</li>
+      </ol>
+    </section>
+
+    <section id="pitch">
+      <h2>Як презентувати</h2>
+      <p>
+        Позиціонування має бути чесним: це не "бот, який сам зрозуміє будь-який бінарник".
+        Це framework, де розробник дає мінімальний контракт, а агенти і RL шар роблять важку QA-роботу.
+      </p>
+      <div class="quote">
+        Bridge-Maker is the missing bridge between game semantics and automated QA:
+        a few decorators in, reproducible bug evidence out.
+      </div>
+      <p>
+        Для demo показуйте `examples/buggy_roguelike.py`, команду `bridge-maker demo`,
+        `state_map.json` і фінальний `report.html`.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

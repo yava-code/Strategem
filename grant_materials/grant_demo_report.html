@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bridge-Maker MVP Report</title>
+  <style>
+    body { margin:0; font-family: Aptos, Segoe UI, Arial, sans-serif; background:#0b1020; color:#edf3ff; }
+    main { max-width:1120px; margin:0 auto; padding:42px 28px; }
+    h1 { font-size:44px; margin:0 0 6px; }
+    h2 { margin-top:34px; }
+    .sub { color:#9fb3d8; font-size:18px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin:28px 0; }
+    .card,.panel,.hit { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:14px; padding:16px; box-shadow:0 18px 45px rgba(0,0,0,.22); }
+    .label { color:#9fb3d8; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+    .value { font-size:26px; font-weight:700; margin-top:6px; }
+    table { width:100%; border-collapse:collapse; }
+    td,th { border-bottom:1px solid rgba(255,255,255,.12); padding:10px; text-align:left; }
+    code,pre { background:rgba(0,0,0,.28); border-radius:8px; color:#d8e7ff; }
+    pre { padding:12px; overflow:auto; }
+    .bar { display:flex; align-items:center; gap:12px; margin:8px 0; }
+    .bar span { width:150px; color:#b8c7e7; }
+    .bar strong { display:inline-block; min-width:24px; padding:5px 8px; border-radius:8px; background:#62e6ac; color:#07111d; }
+    .muted { color:#9fb3d8; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Bridge-Maker MVP Report</h1>
+  <div class="sub">Contract-first automated game QA: annotations -> semantic contract -> trace -> bug evidence.</div>
+  <section class="grid"><div class='card'><div class='label'>Game Name</div><div class='value'>buggy_roguelike</div></div><div class='card'><div class='label'>State Fields</div><div class='value'>5</div></div><div class='card'><div class='label'>Actions</div><div class='value'>4</div></div><div class='card'><div class='label'>Oracles</div><div class='value'>2</div></div><div class='card'><div class='label'>Trace Frames</div><div class='value'>13</div></div><div class='card'><div class='label'>Oracle Hits</div><div class='value'>3</div></div><div class='card'><div class='label'>Unique Actions Seen</div><div class='value'>4</div></div><div class='card'><div class='label'>Status</div><div class='value'>bug_found</div></div></section>
+  <section class="panel"><h2>Action Coverage</h2><div class='bar'><span>move_right</span><strong style='width:102px'>3</strong></div><div class='bar'><span>move_left</span><strong style='width:102px'>3</strong></div><div class='bar'><span>wait</span><strong style='width:102px'>3</strong></div><div class='bar'><span>pickup_gold</span><strong style='width:102px'>3</strong></div></section>
+  <section><h2>Oracle Findings</h2><div class='hit'><b>out_of_bounds</b> after <code>move_right</code><pre>{
+  &quot;hp&quot;: 10.0,
+  &quot;x&quot;: 10.0,
+  &quot;y&quot;: 4.0,
+  &quot;gold&quot;: 0,
+  &quot;turn&quot;: 2
+}</pre></div><div class='hit'><b>out_of_bounds</b> after <code>move_right</code><pre>{
+  &quot;hp&quot;: 10.0,
+  &quot;x&quot;: 11.0,
+  &quot;y&quot;: 4.0,
+  &quot;gold&quot;: 0,
+  &quot;turn&quot;: 3
+}</pre></div><div class='hit'><b>out_of_bounds</b> after <code>move_left</code><pre>{
+  &quot;hp&quot;: 10.0,
+  &quot;x&quot;: 10.0,
+  &quot;y&quot;: 4.0,
+  &quot;gold&quot;: 0,
+  &quot;turn&quot;: 4
+}</pre></div></section>
+  <section class="panel"><h2>Exported State Contract</h2><table><thead><tr><th>Field</th><th>Role</th><th>Bounds</th><th>Source</th></tr></thead><tbody><tr><td>hp</td><td>health</td><td>0.0..10.0</td><td>bridge_adapter_buggy_roguelike_fa60193cdd.hp</td></tr><tr><td>x</td><td>coordinate_x</td><td>0.0..9.0</td><td>bridge_adapter_buggy_roguelike_fa60193cdd.position[0]</td></tr><tr><td>y</td><td>coordinate_y</td><td>0.0..9.0</td><td>bridge_adapter_buggy_roguelike_fa60193cdd.position[1]</td></tr><tr><td>gold</td><td>scalar</td><td>0.0..9999.0</td><td>bridge_adapter_buggy_roguelike_fa60193cdd.gold</td></tr><tr><td>turn</td><td>scalar</td><td>0.0..1000.0</td><td>bridge_adapter_buggy_roguelike_fa60193cdd.turn</td></tr></tbody></table></section>
+</main>
+</body>
+</html>

@@ -6,7 +6,7 @@ Bridge-Maker helps indie developers and reverse-engineering researchers turn a g
 
 > Expose a small semantic game contract, let agents expand and validate it, then generate a Gymnasium environment, train an RL swarm, and produce a useful bug report.
 
-The previous CE/Ghidra-first black-box plan is archived in `master_roadmap_v2_old.md`. The current plan is `master_roadmap_v3.md`.
+The previous CE/Ghidra-first and CoQ/socket plans are historical experiments and are no longer active project context. The current plan is `master_roadmap_v3.md`.
 
 ---
 
@@ -190,11 +190,11 @@ Write code like an experienced human programmer:
 
 ## 10. Immediate Focus
 
-Next implementation should build the SDK/adapter path:
+The SDK/adapter MVP is implemented. Current focus is hardening and proof:
 
-1. `src/sdk/annotations.py`
-2. `src/sdk/runtime.py`
-3. `src/sdk/export.py`
-4. annotated dummy target
-5. NoitaRL adapter spike
-6. SDK-backed env generation using the existing trainer/dashboard stack
+1. keep `tests/test_contract_sdk.py` green;
+2. maintain `examples/buggy_roguelike.py` as the canonical bug-finding demo;
+3. keep `python -m bridge_maker demo --out runs/grant_demo` producing a report with oracle hits;
+4. use `adapters/noita_ws/README.md` as the first real external adapter target record;
+5. wire a real Noita/NoitaRL runtime only when the game/mod path is available;
+6. preserve CE/Ghidra tooling as optional assist, never as the MVP happy path.

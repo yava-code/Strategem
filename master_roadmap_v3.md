@@ -1,9 +1,9 @@
 # The Bridge-Maker: Master Implementation Plan v3
 ## Annotation/Adapter-First Game QA & RL Framework
 
-**Status:** Proposed current direction  
-**Date:** 2026-06-14  
-**Supersedes:** `master_roadmap_v2_old.md`  
+**Status:** Active current direction; SDK MVP proof implemented  
+**Date:** 2026-06-16  
+**Supersedes:** archived CE/Ghidra-first and CoQ/socket experiments  
 **Product thesis:** Indie developers should not learn PDDL, reverse engineering, RLlib, or memory scanning. They should expose a small semantic contract, run the SDK overnight, and receive a trainer, RL agent, and bug report.
 
 ---
@@ -162,16 +162,20 @@ flowchart TD
 
 ### Phase 0 - Documentation Reset
 
+Status: complete.
+
 Goal: stop future context from pulling the project back into the failed "universal binary magic" promise.
 
-- Archive `master_roadmap_v2.md` as `master_roadmap_v2_old.md`.
+- Remove stale active roadmap files that point back to the CE/Ghidra-first or CoQ/socket approach.
 - Treat this file as the current plan.
-- Rewrite `AGENTS.md` and `PRD.md` after this plan is accepted so they say SDK/Adapter-first, grey-box optional.
-- Mark CoQ/Harmony/socket docs as archived historical experiments.
+- Keep `AGENTS.md` and `PRD.md` aligned with SDK/Adapter-first architecture and grey-box optional tooling.
+- Mark CoQ/Harmony/socket work as historical experiment notes only.
 
 Done when: a new session can read the docs and understand that decorators/adapters are the primary path.
 
 ### Phase 1 - Annotation SDK Core
+
+Status: complete for the Python SDK MVP.
 
 Goal: create the minimal Python SDK that collects semantic annotations without coupling to a specific game.
 
@@ -188,6 +192,8 @@ Goal: create the minimal Python SDK that collects semantic annotations without c
 Done when: a dummy annotated Python target exports a valid `state_map.json` and `trace.jsonl` without CE/Ghidra.
 
 ### Phase 2 - Adapter-First Validation with NoitaRL
+
+Status: in progress. `probable-basilisk/noita-ws-api` was inspected at commit `47054b0`; live Noita execution is pending game/mod setup.
 
 Goal: prove that the framework works on a real reverse-engineered game project without pretending to rediscover everything.
 
@@ -230,6 +236,8 @@ Goal: connect the new SDK contract to the working Phase 3/4 infrastructure.
 Done when: annotated dummy target and NoitaRL adapter both compile into Gymnasium envs and run through `swarm_trainer.py`.
 
 ### Phase 5 - Bug Reports, Not Just Trainers
+
+Status: MVP complete for static JSON/HTML reports from SDK traces.
 
 Goal: ship the output an indie developer actually wants in the morning.
 
@@ -325,11 +333,11 @@ The new MVP is successful when:
 
 ## 12. Immediate Next Steps
 
-1. Rewrite `AGENTS.md` around SDK/Adapter-first architecture.
-2. Replace the old CoQ PRD with a v3 PRD focused on indie annotation UX.
-3. Implement `src/sdk/annotations.py`, `src/sdk/runtime.py`, and `src/sdk/export.py`.
-4. Build an annotated dummy target to replace the CE dummy target as the canonical smoke test.
-5. Add a NoitaRL adapter spike.
-6. Wire SDK export into the existing env compiler and trainer.
+1. Keep `AGENTS.md`, `PRD.md`, and this roadmap aligned around SDK/Adapter-first architecture.
+2. Keep `tests/test_contract_sdk.py` green.
+3. Use `examples/buggy_roguelike.py` as the canonical bug-finding demo.
+4. Use `adapters/noita_ws/README.md` as the next real external adapter target record.
+5. Wire a live Noita/NoitaRL adapter once the game/mod runtime is available.
+6. Connect SDK contracts to the existing trainer/dashboard stack after the report path is stable.
 
 This keeps the strongest parts of the current repo and cuts away the part that kept biting us: pretending reverse engineering can be made invisible for every user.
